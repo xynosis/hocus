@@ -60,6 +60,20 @@
                 </svg>
                 Misc
             </NuxtLink>
+
+            <button
+                type="button"
+                class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors text-left w-full text-neutral-400 dark:text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                style="min-height: 44px;"
+                @click="openTriage"
+            >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M3 5H17M3 10H12M3 15H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <circle cx="15" cy="14" r="3" stroke="currentColor" stroke-width="1.5" fill="none" />
+                    <path d="M14 14L15 15L17 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Backlog{{ backlogCount > 0 ? ` (${backlogCount})` : '' }}
+            </button>
         </div>
 
         <div class="px-2 py-3 border-t border-neutral-100 dark:border-neutral-800 flex flex-col gap-1">
@@ -89,10 +103,19 @@
 <script setup lang="ts">
 import { getColorHex } from '~/utils/colors'
 import { useProjectsStore } from '~/stores/projects'
+import { useTasksStore } from '~/stores/tasks'
 
 const route = useRoute()
 const projectsStore = useProjectsStore()
 const projects = computed(() => projectsStore.sortedProjects)
+
+const { openTriage } = useBacklogTriage()
+const tasksStore = useTasksStore()
+const backlogCount = computed(() =>
+  tasksStore.tasks.filter(t =>
+    t.status !== 'done' && t.parent_id === null && !t.working_on_date && !t.due_date
+  ).length
+)
 
 const emit = defineEmits<{
     'open-task-sheet': []

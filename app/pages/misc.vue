@@ -1,8 +1,28 @@
 <template>
     <div class="p-4">
-        <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100 px-2 py-3">
-            Misc
-        </h1>
+        <div class="flex items-center justify-between px-2 py-3">
+          <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Misc</h1>
+          <SearchBar v-model="search" />
+          <button
+            type="button"
+            class="relative flex items-center justify-center rounded-xl transition-colors"
+            :class="filterCount > 0
+              ? 'text-purple-500 dark:text-purple-400'
+              : 'text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300'"
+            style="min-height: 44px; min-width: 44px;"
+            aria-label="Filter tasks"
+            @click="showFilterSheet = true"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 4h14M5 9h8M8 14h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span v-if="filterCount > 0"
+              class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center"
+              style="font-size: 10px;">
+              {{ filterCount }}
+            </span>
+          </button>
+        </div>
 
 
         <ErrorMessage v-if="tasksStore.error" :message="tasksStore.error" :on-retry="() => tasksStore.fetchTasks()" />
@@ -23,8 +43,9 @@
                     <p class="text-neutral-400 dark:text-neutral-500 text-sm">All loose tasks are done.</p>
                 </div>
 
-                <TaskCard v-for="task in miscTasks" :key="task.id" :task="task" :subtask-count="subtaskCount(task.id)"
-                    :subtask-complete-count="subtaskCompleteCount(task.id)" @click="navigateTo(`/task/${task.id}`)"
+                <TaskCard v-for="task in miscTasks" :key="task.id" :task="task"
+                    :search-term="search.trim().toLowerCase() || undefined"
+                    @click="navigateTo(`/task/${task.id}`)"
                     @delete="onDelete(task.id)" />
 
                 <template v-if="completedMiscTasks.length > 0">
@@ -42,8 +63,6 @@
                     <template v-if="showCompleted">
                         <div class="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex flex-col gap-3">
                             <TaskCard v-for="task in completedMiscTasks" :key="task.id" :task="task"
-                                :subtask-count="subtaskCount(task.id)"
-                                :subtask-complete-count="subtaskCompleteCount(task.id)"
                                 @click="navigateTo(`/task/${task.id}`)" @delete="onDelete(task.id)" />
                         </div>
                     </template>
@@ -55,28 +74,44 @@
                 This will permanently remove the task. This can't be undone.
             </p>
         </BaseModal>
+
+        <FilterSheet v-model="showFilterSheet" :filters="filters" @update:filters="filters = $event" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { useTasksStore } from '~/stores/tasks'
-import { useSubtasksStore } from '~/stores/subtasks'
 import { useProjectsStore } from '~/stores/projects'
+import { emptyFilters, activeFilterCount, applyFilters } from '~/utils/filters'
+import type { TaskFilters } from '~/utils/filters'
 import BaseModal from '~/components/ui/BaseModal.vue'
+import FilterSheet from '~/components/ui/FilterSheet.vue'
+import SearchBar from '~/components/ui/SearchBar.vue'
 
 const tasksStore = useTasksStore()
-const subtasksStore = useSubtasksStore()
 const projectsStore = useProjectsStore()
 const showCompleted = ref(false)
+const search = ref('')
+const showFilterSheet = ref(false)
+const filters = ref<TaskFilters>(emptyFilters())
+const filterCount = computed(() => activeFilterCount(filters.value))
 
 const allMiscTasks = computed(() => {
     const miscTaskIds = new Set(projectsStore.getMiscTaskIds())
     return tasksStore.sortedTasks.filter(t => miscTaskIds.has(t.id))
 })
 
-const miscTasks = computed(() =>
-    allMiscTasks.value.filter(t => t.status !== 'done')
-)
+const miscTasks = computed(() => {
+    const searchTerm = search.value.trim().toLowerCase()
+    if (searchTerm) {
+        return tasksStore.sortedTasks.filter(t =>
+      t.title.toLowerCase().includes(searchTerm) ||
+      (t.notes?.toLowerCase().includes(searchTerm) ?? false)
+    )
+    }
+    const base = allMiscTasks.value.filter(t => t.status !== 'done')
+    return applyFilters(base, filters.value)
+})
 
 const completedMiscTasks = computed(() =>
     allMiscTasks.value.filter(t => t.status === 'done')
@@ -85,13 +120,6 @@ const completedMiscTasks = computed(() =>
 onUnmounted(() => {
     showCompleted.value = false
 })
-function subtaskCount(taskId: string): number {
-    return subtasksStore.getSubtasksByTaskId(taskId).length
-}
-
-function subtaskCompleteCount(taskId: string): number {
-    return subtasksStore.getSubtasksByTaskId(taskId).filter(s => s.is_complete).length
-}
 
 const showDeleteModal = ref(false)
 const pendingDeleteId = ref<string | null>(null)

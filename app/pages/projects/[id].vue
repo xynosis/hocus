@@ -53,11 +53,31 @@
 
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-base font-medium text-neutral-800 dark:text-neutral-100">Tasks</h2>
-                <button type="button"
-                    class="flex items-center gap-1 text-sm text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
-                    style="min-height: 44px;" @click="isTaskFormOpen = true">
-                    + Add task
-                </button>
+                <div class="flex items-center gap-1">
+                    <SearchBar v-model="search" />
+                    <button type="button"
+                        class="relative flex items-center justify-center rounded-xl transition-colors"
+                        :class="filterCount > 0
+                            ? 'text-purple-500 dark:text-purple-400'
+                            : 'text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300'"
+                        style="min-height: 44px; min-width: 44px;"
+                        aria-label="Filter tasks"
+                        @click="showFilterSheet = true">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2 4h14M5 9h8M8 14h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <span v-if="filterCount > 0"
+                            class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center"
+                            style="font-size: 10px;">
+                            {{ filterCount }}
+                        </span>
+                    </button>
+                    <button type="button"
+                        class="flex items-center gap-1 text-sm text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
+                        style="min-height: 44px;" @click="openAddTask(null)">
+                        + Add task
+                    </button>
+                </div>
             </div>
 
             <div v-if="tasksStore.isLoading" class="flex flex-col gap-3">
@@ -67,50 +87,119 @@
                 :on-retry="() => projectsStore.fetchProjects()" />
 
             <template v-else>
-                <div v-if="projectTasks.length === 0 && completedProjectTasks.length === 0"
+                <div v-if="allProjectTasks.length === 0"
                     class="flex flex-col items-center justify-center py-12 gap-2">
                     <p class="text-neutral-400 dark:text-neutral-500 text-sm">No tasks in this project yet.</p>
                 </div>
 
-                <div v-else class="flex flex-col gap-3">
-                    <div v-if="projectTasks.length === 0 && !showCompleted"
-                        class="flex flex-col items-center justify-center py-8 gap-2">
-                        <p class="text-neutral-400 dark:text-neutral-500 text-sm">All tasks in this project are done.
-                        </p>
+                <template v-else>
+                    <!-- Unsectioned tasks -->
+                    <div v-if="unsectionedActive.length > 0 || unsectionedDone.length > 0" class="flex flex-col gap-3">
+                        <TaskCard v-for="task in unsectionedActive" :key="task.id" :task="task"
+                            :search-term="search.trim().toLowerCase() || undefined"
+                            @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
+
+                        <template v-if="unsectionedDone.length > 0">
+                            <button type="button"
+                                class="flex items-center gap-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-400 transition-colors px-1 py-2"
+                                @click="showCompleted = !showCompleted">
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="transition-transform"
+                                    :class="showCompleted ? 'rotate-180' : ''">
+                                    <path d="M2 4L7 9L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                                {{ showCompleted ? 'Hide completed' : `Show completed (${unsectionedDone.length})` }}
+                            </button>
+                            <template v-if="showCompleted">
+                                <div class="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex flex-col gap-3">
+                                    <TaskCard v-for="task in unsectionedDone" :key="task.id" :task="task"
+                                        @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
+                                </div>
+                            </template>
+                        </template>
                     </div>
 
-                    <TaskCard v-for="task in projectTasks" :key="task.id" :task="task"
-                        :subtask-count="subtaskCount(task.id)" :subtask-complete-count="subtaskCompleteCount(task.id)"
-                        @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
+                    <!-- Sections -->
+                    <div v-for="section in projectSections" :key="section.id" class="flex flex-col gap-3">
+                        <div class="flex items-center gap-2 px-1 mt-2">
+                            <template v-if="editingSectionId === section.id">
+                                <input
+                                    ref="sectionNameInput"
+                                    v-model="editingSectionName"
+                                    class="flex-1 text-sm font-medium bg-transparent border-b border-purple-400 outline-none text-neutral-800 dark:text-neutral-100"
+                                    @keydown.enter="saveSection(section.id)"
+                                    @keydown.escape="cancelEditSection"
+                                    @blur="saveSection(section.id)"
+                                />
+                            </template>
+                            <template v-else>
+                                <h3 class="flex-1 text-sm font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
+                                    {{ section.name }}
+                                </h3>
+                                <button type="button"
+                                    class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                                    style="min-height: 32px; min-width: 32px; display: flex; align-items: center; justify-content: center;"
+                                    @click="startEditSection(section)">
+                                    ✎
+                                </button>
+                                <button type="button"
+                                    class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-red-400 dark:hover:text-red-500 transition-colors"
+                                    style="min-height: 32px; min-width: 32px; display: flex; align-items: center; justify-content: center;"
+                                    @click="confirmDeleteSection(section.id)">
+                                    ✕
+                                </button>
+                                <button type="button"
+                                    class="text-xs text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors"
+                                    style="min-height: 32px; display: flex; align-items: center;"
+                                    @click="openAddTask(section.id)">
+                                    + Add
+                                </button>
+                            </template>
+                        </div>
 
-                    <template v-if="completedProjectTasks.length > 0">
-                        <button type="button"
-                            class="flex items-center gap-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-400 transition-colors px-1 py-2"
-                            @click="showCompleted = !showCompleted">
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="transition-transform"
-                                :class="showCompleted ? 'rotate-180' : ''">
-                                <path d="M2 4L7 9L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                            </svg>
-                            {{ showCompleted ? 'Hide completed' : `Show completed (${completedProjectTasks.length})` }}
-                        </button>
+                        <div v-if="sectionActiveTasks(section.id).length === 0 && sectionDoneTasks(section.id).length === 0"
+                            class="px-2 py-3 text-xs text-neutral-400 dark:text-neutral-500 italic">
+                            No tasks in this section.
+                        </div>
 
-                        <template v-if="showCompleted">
-                            <div class="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex flex-col gap-3">
-                                <TaskCard v-for="task in completedProjectTasks" :key="task.id" :task="task"
-                                    :subtask-count="subtaskCount(task.id)"
-                                    :subtask-complete-count="subtaskCompleteCount(task.id)"
-                                    @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
-                            </div>
+                        <TaskCard v-for="task in sectionActiveTasks(section.id)" :key="task.id" :task="task"
+                            :search-term="search.trim().toLowerCase() || undefined"
+                            @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
+
+                        <template v-if="sectionDoneTasks(section.id).length > 0">
+                            <button type="button"
+                                class="flex items-center gap-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-400 transition-colors px-1 py-1"
+                                @click="toggleSectionCompleted(section.id)">
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="transition-transform"
+                                    :class="sectionShowCompleted.has(section.id) ? 'rotate-180' : ''">
+                                    <path d="M2 4L7 9L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                                {{ sectionShowCompleted.has(section.id) ? 'Hide completed' : `Show completed (${sectionDoneTasks(section.id).length})` }}
+                            </button>
+                            <template v-if="sectionShowCompleted.has(section.id)">
+                                <div class="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex flex-col gap-3">
+                                    <TaskCard v-for="task in sectionDoneTasks(section.id)" :key="task.id" :task="task"
+                                        @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
+                                </div>
+                            </template>
                         </template>
-                    </template>
-                </div>
+                    </div>
+
+                    <!-- Add section button -->
+                    <button type="button"
+                        class="flex items-center gap-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors px-1 py-2"
+                        @click="addNewSection">
+                        + Add section
+                    </button>
+                </template>
             </template>
         </template>
 
         <ProjectForm v-if="project" v-model="isEditFormOpen" :project="project" @submit="onEditSubmit" />
 
-        <TaskForm v-model="isTaskFormOpen" :preselected-project-id="route.params.id as string" @submit="onTaskSubmit" />
+        <TaskForm v-model="isTaskFormOpen" :preselected-project-id="route.params.id as string"
+            @submit="onTaskSubmit" />
 
         <BaseModal v-model="showDeleteModal" title="Delete project?" confirm-label="Delete" @confirm="onDeleteProject">
             <p class="text-sm text-neutral-600 dark:text-neutral-400">
@@ -124,6 +213,15 @@
                 This will permanently remove the task. This can't be undone.
             </p>
         </BaseModal>
+
+        <BaseModal v-model="showDeleteSectionModal" title="Delete section?" confirm-label="Delete"
+            @confirm="executeDeleteSection">
+            <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                The section will be removed. Tasks inside it stay in the project.
+            </p>
+        </BaseModal>
+
+        <FilterSheet v-model="showFilterSheet" :filters="filters" @update:filters="filters = $event" />
     </div>
 </template>
 
@@ -131,10 +229,14 @@
 import { getColorHex } from '~/utils/colors'
 import { useProjectsStore } from '~/stores/projects'
 import { useTasksStore } from '~/stores/tasks'
-import { useSubtasksStore } from '~/stores/subtasks'
 import { isOverdue, formatDate } from '~/utils/dates'
+import { emptyFilters, activeFilterCount, applyFilters } from '~/utils/filters'
+import type { TaskFilters } from '~/utils/filters'
+import type { ProjectSection } from '~/types'
 import ProjectForm from '~/components/project/ProjectForm.vue'
 import TaskForm from '~/components/task/TaskForm.vue'
+import FilterSheet from '~/components/ui/FilterSheet.vue'
+import SearchBar from '~/components/ui/SearchBar.vue'
 import BaseModal from '~/components/ui/BaseModal.vue'
 import type { CreateTaskPayload } from '~/stores/tasks'
 
@@ -142,50 +244,129 @@ const route = useRoute()
 const router = useRouter()
 const projectsStore = useProjectsStore()
 const tasksStore = useTasksStore()
-const subtasksStore = useSubtasksStore()
 
 const project = computed(() => projectsStore.getProjectById(route.params.id as string))
-
+const projectSections = computed(() => projectsStore.getSectionsForProject(route.params.id as string))
 
 const showCompleted = ref(false)
+const sectionShowCompleted = reactive(new Set<string>())
+const search = ref('')
+const showFilterSheet = ref(false)
+const filters = ref<TaskFilters>(emptyFilters())
+const filterCount = computed(() => activeFilterCount(filters.value))
 
 const allProjectTasks = computed(() => {
     const taskIds = projectsStore.getTaskIdsForProject(route.params.id as string)
     return tasksStore.sortedTasks.filter(t => taskIds.includes(t.id))
 })
 
-const projectTasks = computed(() =>
-    allProjectTasks.value.filter(t => t.status !== 'done')
+function filteredActive(tasks: typeof allProjectTasks.value) {
+    const searchTerm = search.value.trim().toLowerCase()
+    if (searchTerm) {
+        return tasks.filter(t =>
+            t.title.toLowerCase().includes(searchTerm) ||
+            (t.notes?.toLowerCase().includes(searchTerm) ?? false)
+        )
+    }
+    return applyFilters(tasks.filter(t => t.status !== 'done'), filters.value)
+}
+
+const unsectionedActive = computed(() =>
+    filteredActive(allProjectTasks.value.filter(t => !t.section_id))
+)
+const unsectionedDone = computed(() =>
+    allProjectTasks.value.filter(t => t.status === 'done' && !t.section_id)
 )
 
-const completedProjectTasks = computed(() =>
-    allProjectTasks.value.filter(t => t.status === 'done')
-)
+function sectionActiveTasks(sectionId: string) {
+    return filteredActive(allProjectTasks.value.filter(t => t.section_id === sectionId))
+}
+function sectionDoneTasks(sectionId: string) {
+    return allProjectTasks.value.filter(t => t.status === 'done' && t.section_id === sectionId)
+}
+
+function toggleSectionCompleted(sectionId: string) {
+    if (sectionShowCompleted.has(sectionId)) {
+        sectionShowCompleted.delete(sectionId)
+    } else {
+        sectionShowCompleted.add(sectionId)
+    }
+}
 
 onUnmounted(() => {
     showCompleted.value = false
 })
 
-function subtaskCount(taskId: string): number {
-    return subtasksStore.getSubtasksByTaskId(taskId).length
+// Section editing
+const editingSectionId = ref<string | null>(null)
+const editingSectionName = ref('')
+const sectionNameInput = ref<HTMLInputElement | null>(null)
+
+function startEditSection(section: ProjectSection) {
+    editingSectionId.value = section.id
+    editingSectionName.value = section.name
+    nextTick(() => {
+        if (Array.isArray(sectionNameInput.value)) {
+            sectionNameInput.value[0]?.focus()
+        } else {
+            sectionNameInput.value?.focus()
+        }
+    })
 }
 
-function subtaskCompleteCount(taskId: string): number {
-    return subtasksStore.getSubtasksByTaskId(taskId).filter(s => s.is_complete).length
+function cancelEditSection() {
+    editingSectionId.value = null
+    editingSectionName.value = ''
 }
 
+async function saveSection(id: string) {
+    const name = editingSectionName.value.trim()
+    if (name) await projectsStore.updateSection(id, name)
+    cancelEditSection()
+}
+
+async function addNewSection() {
+    await projectsStore.addSection(route.params.id as string, 'New section')
+    const sections = projectsStore.getSectionsForProject(route.params.id as string)
+    const newest = sections[sections.length - 1]
+    if (newest) startEditSection(newest)
+}
+
+const showDeleteSectionModal = ref(false)
+const pendingDeleteSectionId = ref<string | null>(null)
+
+function confirmDeleteSection(id: string) {
+    pendingDeleteSectionId.value = id
+    showDeleteSectionModal.value = true
+}
+
+async function executeDeleteSection() {
+    if (pendingDeleteSectionId.value) {
+        await projectsStore.deleteSection(pendingDeleteSectionId.value)
+        pendingDeleteSectionId.value = null
+    }
+}
+
+// Task management
 const isEditFormOpen = ref(false)
 const isTaskFormOpen = ref(false)
+const pendingTaskSectionId = ref<string | null>(null)
 const showDeleteModal = ref(false)
 const showDeleteTaskModal = ref(false)
 const pendingDeleteTaskId = ref<string | null>(null)
+
+function openAddTask(sectionId: string | null) {
+    pendingTaskSectionId.value = sectionId
+    isTaskFormOpen.value = true
+}
 
 async function onEditSubmit(payload: { name: string; description: string | null; due_date: string | null }) {
     await projectsStore.updateProject(route.params.id as string, payload)
 }
 
-async function onTaskSubmit(payload: CreateTaskPayload, projectIds: string[]) {
-    const task = await tasksStore.addTask(payload)
+async function onTaskSubmit(payload: CreateTaskPayload | import('~/stores/tasks').UpdateTaskPayload, projectIds: string[]) {
+    const taskPayload = { ...(payload as CreateTaskPayload), section_id: pendingTaskSectionId.value }
+    const task = await tasksStore.addTask(taskPayload)
     if (task) {
         const ids = projectIds.length > 0 ? projectIds : [route.params.id as string]
         await projectsStore.syncTaskProjects(task.id, ids)

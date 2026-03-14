@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Project, TaskProject } from '~/types'
+import type { Project, TaskProject, ProjectSection } from '~/types'
 
 const error = ref<string | null>(null)
 
@@ -25,6 +25,7 @@ export const useProjectsStore = defineStore('projects', () => {
 
     const projects = ref<Project[]>([])
     const taskProjects = ref<TaskProject[]>([])
+    const sections = ref<ProjectSection[]>([])
 
     const sortedProjects = computed(() => {
         return [...projects.value].sort((a, b) =>
@@ -52,7 +53,7 @@ export const useProjectsStore = defineStore('projects', () => {
         const assignedTaskIds = new Set(taskProjects.value.map(tp => tp.task_id))
         const tasksStore = useTasksStore()
         return tasksStore.tasks
-            .filter(t => !assignedTaskIds.has(t.id))
+            .filter(t => !assignedTaskIds.has(t.id) && t.parent_id === null)
             .map(t => t.id)
     }
 
@@ -220,6 +221,91 @@ export const useProjectsStore = defineStore('projects', () => {
         }
     }
 
+    function getSectionsForProject(projectId: string): ProjectSection[] {
+        return sections.value
+            .filter(s => s.project_id === projectId)
+            .sort((a, b) => a.sort_order - b.sort_order)
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sectionsClient = () => (supabase as any).from('project_sections')
+
+    async function fetchSections(): Promise<void> {
+        const { data, error } = await sectionsClient()
+            .select('*')
+            .order('sort_order', { ascending: true })
+
+        if (error) {
+            console.error('Failed to fetch sections:', error.message)
+            return
+        }
+
+        sections.value = (data as unknown as ProjectSection[]) ?? []
+    }
+
+    async function addSection(projectId: string, name: string): Promise<ProjectSection | null> {
+        const existingSections = getSectionsForProject(projectId)
+        const sort_order = existingSections.length
+
+        const optimistic: ProjectSection = {
+            id: crypto.randomUUID(),
+            project_id: projectId,
+            user_id: authStore.user!.id,
+            name,
+            sort_order,
+            created_at: new Date().toISOString(),
+        }
+
+        sections.value.push(optimistic)
+
+        const { data, error } = await sectionsClient()
+            .insert({ project_id: projectId, user_id: authStore.user!.id, name, sort_order })
+            .select()
+            .single()
+
+        if (error) {
+            console.error('Failed to add section:', error.message)
+            sections.value = sections.value.filter(s => s.id !== optimistic.id)
+            return null
+        }
+
+        const index = sections.value.findIndex(s => s.id === optimistic.id)
+        if (index !== -1) sections.value[index] = data as unknown as ProjectSection
+
+        return data as unknown as ProjectSection
+    }
+
+    async function updateSection(id: string, name: string): Promise<void> {
+        const index = sections.value.findIndex(s => s.id === id)
+        if (index === -1) return
+
+        const previous = { ...sections.value[index]! }
+        sections.value[index] = { ...sections.value[index]!, name }
+
+        const { error } = await sectionsClient()
+            .update({ name })
+            .eq('id', id)
+
+        if (error) {
+            console.error('Failed to update section:', error.message)
+            sections.value[index] = previous
+        }
+    }
+
+    async function deleteSection(id: string): Promise<void> {
+        const previous = [...sections.value]
+        sections.value = sections.value.filter(s => s.id !== id)
+
+        const { error } = await sectionsClient()
+            .delete()
+            .eq('id', id)
+
+        if (error) {
+            console.error('Failed to delete section:', error.message)
+            sections.value = previous
+        }
+    }
+
     async function syncTaskProjects(taskId: string, projectIds: string[]): Promise<void> {
         const current = getProjectIdsForTask(taskId)
         const toAdd = projectIds.filter(id => !current.includes(id))
@@ -235,18 +321,24 @@ export const useProjectsStore = defineStore('projects', () => {
         projects, error,
         isLoading,
         taskProjects,
+        sections,
         sortedProjects,
         getProjectById,
         getProjectIdsForTask,
         getTaskIdsForProject,
         getMiscTaskIds,
+        getSectionsForProject,
         fetchProjects,
         fetchTaskProjects,
+        fetchSections,
         addProject,
         updateProject,
         deleteProject,
         assignTaskToProject,
         removeTaskFromProject,
         syncTaskProjects,
+        addSection,
+        updateSection,
+        deleteSection,
     }
 })

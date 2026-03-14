@@ -10,22 +10,30 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
 import { useTasksStore } from '~/stores/tasks'
-import { useSubtasksStore } from '~/stores/subtasks'
 import { useProjectsStore } from '~/stores/projects'
+import { usePatternsStore } from '~/stores/patterns'
+import { useDependenciesStore } from '~/stores/dependencies'
+import { useTaskNotesStore } from '~/stores/taskNotes'
 
 const authStore = useAuthStore()
 const tasksStore = useTasksStore()
-const subtasksStore = useSubtasksStore()
 const projectsStore = useProjectsStore()
+const patternsStore = usePatternsStore()
+const dependenciesStore = useDependenciesStore()
+const taskNotesStore = useTaskNotesStore()
 const supabase = useSupabaseClient()
 
 async function loadUserData() {
   await Promise.all([
     tasksStore.fetchTasks(),
-    subtasksStore.fetchAllSubtasks(),
     projectsStore.fetchProjects(),
     projectsStore.fetchTaskProjects(),
+    projectsStore.fetchSections(),
+    patternsStore.fetchPatterns(),
+    dependenciesStore.fetchDependencies(),
+    taskNotesStore.fetchNotes(),
   ])
+  await tasksStore.inferOrbitTasks()
 }
 
 onMounted(async () => {
@@ -41,9 +49,12 @@ onMounted(async () => {
       await loadUserData()
     } else if (event === 'SIGNED_OUT') {
       tasksStore.tasks = []
-      subtasksStore.subtasks = []
       projectsStore.projects = []
       projectsStore.taskProjects = []
+      projectsStore.sections = []
+      patternsStore.patterns = []
+      dependenciesStore.dependencies = []
+      taskNotesStore.notes = []
     }
   })
 })

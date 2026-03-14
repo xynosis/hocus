@@ -45,18 +45,102 @@
       >
         Reset
       </button>
+      <button
+        type="button"
+        class="px-3 py-2 rounded-xl text-sm border transition-colors"
+        :class="showSettings
+          ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400'
+          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;"
+        aria-label="Timer settings"
+        @click="showSettings = !showSettings"
+      >
+        ⚙︎
+      </button>
     </div>
+
+    <Transition name="expand">
+      <div v-if="showSettings" class="w-full flex flex-col gap-3 pt-1">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-neutral-500 dark:text-neutral-400 text-center">Focus (min)</label>
+            <input
+              v-model.number="draftWork"
+              type="number"
+              min="1"
+              max="120"
+              class="w-full rounded-xl border px-3 py-2 text-sm text-center bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-neutral-500 dark:text-neutral-400 text-center">Break (min)</label>
+            <input
+              v-model.number="draftBreak"
+              type="number"
+              min="1"
+              max="60"
+              class="w-full rounded-xl border px-3 py-2 text-sm text-center bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+          </div>
+        </div>
+        <button
+          type="button"
+          class="w-full py-2 rounded-xl text-sm font-medium bg-purple-500 text-white hover:bg-purple-600 active:opacity-80 transition-colors"
+          style="min-height: 44px;"
+          @click="saveDurations"
+        >
+          Save
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-const WORK_SECONDS = 25 * 60
-const BREAK_SECONDS = 5 * 60
+const DEFAULT_WORK = 25
+const DEFAULT_BREAK = 5
+
+function loadWorkMinutes(): number {
+  const v = localStorage.getItem('pomodoro_work_minutes')
+  return v ? Math.max(1, parseInt(v)) : DEFAULT_WORK
+}
+
+function loadBreakMinutes(): number {
+  const v = localStorage.getItem('pomodoro_break_minutes')
+  return v ? Math.max(1, parseInt(v)) : DEFAULT_BREAK
+}
+
+const workMinutes = ref(DEFAULT_WORK)
+const breakMinutes = ref(DEFAULT_BREAK)
+
+const workSeconds = computed(() => workMinutes.value * 60)
+const breakSeconds = computed(() => breakMinutes.value * 60)
 
 const phase = ref<'work' | 'break'>('work')
-const remaining = ref(WORK_SECONDS)
+const remaining = ref(workSeconds.value)
 const isRunning = ref(false)
 let interval: ReturnType<typeof setInterval> | null = null
+
+// Settings UI
+const showSettings = ref(false)
+const draftWork = ref(DEFAULT_WORK)
+const draftBreak = ref(DEFAULT_BREAK)
+
+function saveDurations() {
+  const newWork = Math.max(1, draftWork.value || DEFAULT_WORK)
+  const newBreak = Math.max(1, draftBreak.value || DEFAULT_BREAK)
+  workMinutes.value = newWork
+  breakMinutes.value = newBreak
+  localStorage.setItem('pomodoro_work_minutes', String(newWork))
+  localStorage.setItem('pomodoro_break_minutes', String(newBreak))
+  // Reset timer to new duration if not running
+  if (!isRunning.value) {
+    phase.value = 'work'
+    remaining.value = workSeconds.value
+    saveState()
+  }
+  showSettings.value = false
+}
 
 const formattedTime = computed(() => {
   const m = Math.floor(remaining.value / 60).toString().padStart(2, '0')
@@ -84,7 +168,7 @@ function playChime() {
 
 function transitionPhase() {
   phase.value = phase.value === 'work' ? 'break' : 'work'
-  remaining.value = phase.value === 'work' ? WORK_SECONDS : BREAK_SECONDS
+  remaining.value = phase.value === 'work' ? workSeconds.value : breakSeconds.value
   playChime()
   saveState()
 }
@@ -122,7 +206,7 @@ function resetTimer() {
   isRunning.value = false
   if (interval) clearInterval(interval)
   phase.value = 'work'
-  remaining.value = WORK_SECONDS
+  remaining.value = workSeconds.value
   saveState()
 }
 
@@ -134,12 +218,20 @@ function saveState() {
 }
 
 function restoreState() {
+  workMinutes.value = loadWorkMinutes()
+  breakMinutes.value = loadBreakMinutes()
+  draftWork.value = workMinutes.value
+  draftBreak.value = breakMinutes.value
+
   const savedPhase = sessionStorage.getItem('pomodoro_phase') as 'work' | 'break' | null
   const savedRemaining = sessionStorage.getItem('pomodoro_remaining')
   const savedRunning = sessionStorage.getItem('pomodoro_running')
   const savedTimestamp = sessionStorage.getItem('pomodoro_timestamp')
 
-  if (!savedPhase || !savedRemaining || !savedTimestamp) return
+  if (!savedPhase || !savedRemaining || !savedTimestamp) {
+    remaining.value = workSeconds.value
+    return
+  }
 
   phase.value = savedPhase
   let remainingSeconds = parseInt(savedRemaining)
@@ -164,3 +256,14 @@ onUnmounted(() => {
   if (interval) clearInterval(interval)
 })
 </script>
+
+<style scoped>
+.expand-enter-active,
+.expand-leave-active {
+  transition: opacity 0.2s ease;
+}
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+}
+</style>

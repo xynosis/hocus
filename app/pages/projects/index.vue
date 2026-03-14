@@ -42,8 +42,17 @@
                             Due {{ formatDate(project.due_date) }}
                         </span>
                         <span class="text-xs text-neutral-400 dark:text-neutral-500">
-                            {{ taskCount(project.id) }} {{ taskCount(project.id) === 1 ? 'task' : 'tasks' }}
+                            {{ projectProgress(project.id).done }}/{{ projectProgress(project.id).total }} done
                         </span>
+                    </div>
+                    <div v-if="projectProgress(project.id).total > 0" class="mt-2 h-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                        <div
+                            class="h-full rounded-full transition-all"
+                            :class="projectProgress(project.id).done === projectProgress(project.id).total
+                                ? 'bg-green-400 dark:bg-green-500'
+                                : 'bg-purple-400 dark:bg-purple-500'"
+                            :style="{ width: `${Math.round(projectProgress(project.id).done / projectProgress(project.id).total * 100)}%` }"
+                        />
                     </div>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
@@ -63,19 +72,41 @@
 import { getColorHex } from '~/utils/colors'
 
 import { useProjectsStore } from '~/stores/projects'
+import { useTasksStore } from '~/stores/tasks'
 import { isOverdue, formatDate } from '~/utils/dates'
 import ProjectForm from '~/components/project/ProjectForm.vue'
 
 const projectsStore = useProjectsStore()
+const tasksStore = useTasksStore()
 const projects = computed(() => projectsStore.sortedProjects)
 
 const isFormOpen = ref(false)
 
-function taskCount(projectId: string): number {
-    return projectsStore.getTaskIdsForProject(projectId).length
+function projectProgress(projectId: string): { done: number; total: number } {
+    const taskIds = projectsStore.getTaskIdsForProject(projectId)
+    const projectTasks = taskIds
+        .map(id => tasksStore.getTaskById(id))
+        .filter(t => !!t && t.parent_id === null)
+    const done = projectTasks.filter(t => t!.status === 'done').length
+    return { done, total: projectTasks.length }
 }
 
-async function onSubmit(payload: { name: string; description: string | null; due_date: string | null }) {
-    await projectsStore.addProject(payload)
+async function onSubmit(payload: { name: string; description: string | null; due_date: string | null; color_tag: import('~/types').TaskColor | null; templateTaskTitles: string[] }) {
+    const project = await projectsStore.addProject({
+        name: payload.name,
+        description: payload.description,
+        due_date: payload.due_date,
+        color_tag: payload.color_tag,
+    })
+    if (project && payload.templateTaskTitles.length > 0) {
+        const tasks = await Promise.all(
+            payload.templateTaskTitles.map(title => tasksStore.addTask({ title }))
+        )
+        await Promise.all(
+            tasks
+                .filter((t): t is NonNullable<typeof t> => !!t)
+                .map(t => projectsStore.assignTaskToProject(t.id, project.id))
+        )
+    }
 }
 </script>
