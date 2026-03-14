@@ -1,0 +1,77 @@
+import { describe, it, expect, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
+import { useSubtasksStore } from '~/stores/subtasks'
+
+describe('subtasks store', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('adds a subtask', () => {
+    const store = useSubtasksStore()
+    store.addSubtask('task-1', 'First step')
+    expect(store.subtasks).toHaveLength(1)
+    expect(store.subtasks[0]!.title).toBe('First step')
+    expect(store.subtasks[0]!.is_complete).toBe(false)
+  })
+
+  it('assigns incrementing sort_order', () => {
+    const store = useSubtasksStore()
+    store.addSubtask('task-1', 'Step 1')
+    store.addSubtask('task-1', 'Step 2')
+    const subtasks = store.getSubtasksByTaskId('task-1')
+    expect(subtasks[0]!.sort_order).toBe(0)
+    expect(subtasks[1]!.sort_order).toBe(1)
+  })
+
+  it('returns subtasks sorted by sort_order', () => {
+    const store = useSubtasksStore()
+    store.addSubtask('task-1', 'Step 1')
+    store.addSubtask('task-1', 'Step 2')
+    store.addSubtask('task-1', 'Step 3')
+    const subtasks = store.getSubtasksByTaskId('task-1')
+    expect(subtasks.map(s => s.title)).toEqual(['Step 1', 'Step 2', 'Step 3'])
+  })
+
+  it('toggles subtask completion', () => {
+    const store = useSubtasksStore()
+    store.addSubtask('task-1', 'Step 1')
+    const id = store.subtasks[0]!.id
+    store.toggleSubtask(id)
+    expect(store.subtasks[0]!.is_complete).toBe(true)
+    store.toggleSubtask(id)
+    expect(store.subtasks[0]!.is_complete).toBe(false)
+  })
+
+  it('deletes a subtask', () => {
+    const store = useSubtasksStore()
+    store.addSubtask('task-1', 'Step 1')
+    const id = store.subtasks[0]!.id
+    store.deleteSubtask(id)
+    expect(store.subtasks).toHaveLength(0)
+  })
+
+  it('reorders subtasks', () => {
+    const store = useSubtasksStore()
+    store.addSubtask('task-1', 'Step 1')
+    store.addSubtask('task-1', 'Step 2')
+    store.addSubtask('task-1', 'Step 3')
+    const [a, b, c] = store.getSubtasksByTaskId('task-1')
+    store.reorderSubtasks('task-1', [c!, b!, a!])
+    const reordered = store.getSubtasksByTaskId('task-1')
+    expect(reordered.map(s => s.title)).toEqual(['Step 3', 'Step 2', 'Step 1'])
+  })
+
+  it('scopes subtasks by taskId', () => {
+    const store = useSubtasksStore()
+    store.addSubtask('task-1', 'Task 1 step')
+    store.addSubtask('task-2', 'Task 2 step')
+    expect(store.getSubtasksByTaskId('task-1')).toHaveLength(1)
+    expect(store.getSubtasksByTaskId('task-2')).toHaveLength(1)
+  })
+
+  it('ignores updateSubtask for unknown id', () => {
+    const store = useSubtasksStore()
+    expect(() => store.updateSubtask('nonexistent', { title: 'X' })).not.toThrow()
+  })
+})
