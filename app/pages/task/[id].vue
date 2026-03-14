@@ -128,7 +128,7 @@ const showDeleteModal = ref(false)
 
 function onDelete() {
   tasksStore.deleteTask(route.params.id as string)
-  navigateTo('/all')
+  navigateTo('/projects')
 }
 
 function goBack() {
