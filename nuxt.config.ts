@@ -16,6 +16,15 @@ export default defineNuxtConfig({
 
   app: {
     layoutTransition: false,
+    app: {
+      layoutTransition: false,
+      head: {
+        title: 'Hocus',
+        link: [
+          { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
+        ]
+      }
+    },
   },
   vite: {
     optimizeDeps: {
