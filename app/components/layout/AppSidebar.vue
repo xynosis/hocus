@@ -2,7 +2,7 @@
     <aside
         class="fixed left-0 top-0 bottom-0 w-56 bg-white dark:bg-neutral-900 border-r border-neutral-100 dark:border-neutral-800 flex flex-col z-30">
         <div class="px-4 py-5 border-b border-neutral-100 dark:border-neutral-800">
-            <h1 class="text-base font-semibold text-neutral-800 dark:text-neutral-100">Focus Flow</h1>
+            <h1 class="text-base font-semibold text-neutral-800 dark:text-neutral-100">Hocus</h1>
         </div>
 
         <div class="flex-1 overflow-y-auto py-3 flex flex-col gap-1 px-2">
