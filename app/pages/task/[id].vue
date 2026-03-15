@@ -112,7 +112,28 @@
           style="min-height: 44px;"
           @click="tasksStore.setTaskStatus(task.id, 'orbit')"
         >
-          Set to quiet
+          Set to Drifted?
+        </button>
+      </div>
+
+      <!-- Treat as project toggle -->
+      <div class="border-t border-neutral-100 dark:border-neutral-800 pt-4 flex items-center justify-between gap-4 px-1">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Treat as project</span>
+          <span class="text-xs text-neutral-400 dark:text-neutral-500">Won't drift after a few hours — use for multi-session work</span>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="task.is_container"
+          class="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+          :class="task.is_container ? 'bg-purple-500' : 'bg-neutral-200 dark:bg-neutral-700'"
+          @click="tasksStore.updateTask(task.id, { is_container: !task.is_container })"
+        >
+          <span
+            class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+            :class="task.is_container ? 'translate-x-5' : 'translate-x-0'"
+          />
         </button>
       </div>
 
@@ -185,7 +206,7 @@
         </Transition>
       </div>
 
-      <div class="border-t border-neutral-100 dark:border-neutral-800 pt-4">
+      <div ref="breakdownSection" class="border-t border-neutral-100 dark:border-neutral-800 pt-4">
         <TaskBreakdown :task-id="task.id" />
       </div>
 
@@ -272,6 +293,14 @@ const route = useRoute()
 const tasksStore = useTasksStore()
 const { enterFocus } = useFocus()
 
+const breakdownSection = ref<HTMLElement | null>(null)
+
+onMounted(() => {
+  if (route.query.breakdown === '1') {
+    nextTick(() => breakdownSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
+})
+
 const task = computed(() => tasksStore.getTaskById(route.params.id as string))
 
 import { getColorHex } from '~/utils/colors'
@@ -282,7 +311,7 @@ const colorHex = computed(() => getColorHex(task.value?.color_tag ?? null))
 const statusLabel = computed(() => {
   switch (task.value?.status) {
     case 'in_progress': return 'In progress'
-    case 'orbit': return 'Quiet'
+    case 'orbit': return 'Drifted?'
     case 'done': return 'Done'
     default: return 'To do'
   }

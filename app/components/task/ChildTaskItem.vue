@@ -128,6 +128,13 @@ const children = computed(() => tasksStore.getChildTasks(props.task.id))
 function toggleDone() {
   const next = props.task.status === 'done' ? 'todo' : 'done'
   tasksStore.setTaskStatus(props.task.id, next)
+  // Promote parent to in_progress when first child is completed (container task lifecycle)
+  if (next === 'done' && props.task.parent_id) {
+    const parent = tasksStore.getTaskById(props.task.parent_id)
+    if (parent && parent.status === 'todo') {
+      tasksStore.setTaskStatus(props.task.parent_id, 'in_progress')
+    }
+  }
 }
 
 // Inline edit

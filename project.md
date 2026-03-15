@@ -31,6 +31,8 @@ The interface uses color-coding, iconography, and clear visual hierarchy to make
 ### 3. Focus Mode
 A dedicated full-screen focus view shows one task at a time with all other UI hidden. An optional Pomodoro-style timer is available within focus mode, with optional ambient sound. This mode is designed to help users stop deciding and start doing.
 
+Focus Mode includes active support for sustained attention and rest: an elapsed time counter grounds the user in time (addressing ADHD time blindness), a 90-minute hyperfocus nudge reminds users to rest before burning out, and the Pomodoro timer surfaces a directed break activity suggestion at the end of each work interval. After a break, a re-entry confirmation screen prevents the common pattern of accidentally skipping rest. A session summary note is automatically saved on exit, recording time worked and steps completed.
+
 ### 4. Reflective Task Breakdown
 The app presents structured reflective prompts that guide users to break down tasks themselves. This preserves agency, builds self-knowledge, and produces child tasks that are personally meaningful. Common task templates offer a starting scaffold.
 
@@ -47,10 +49,14 @@ Rather than traditional priority levels, Hocus uses two axes that map to how ADH
 Tasks are organised into projects. Each project has a name, description, due date, and color. Tasks can belong to multiple projects. Projects can have optional named sections (phases/groups). Unprojected tasks live in the **Inbox**.
 
 ### 9. Orbit & Task Initiation
-Tasks that have been `in_progress` but untouched for several hours transition to an `orbit` state — a calm "live but paused" indicator that doesn't feel like a failure. Orbit tasks get a warming sheet before Focus Mode re-entry. Untouched tasks approaching their due date get a gentle nudge in Today View. Stale tasks (working_on_date 3+ days overdue) surface in the Avoidance Detector without shame.
+Tasks that have been `in_progress` but untouched for a period transition to an `orbit` state — a calm "live but paused" indicator that doesn't feel like a failure. Orbit tasks get a warming sheet before Focus Mode re-entry. Untouched tasks approaching their due date get a gentle nudge in Today View. Stale tasks (working_on_date 3+ days overdue) surface in the Avoidance Detector without shame.
+
+The `in_progress` status is set automatically: entering Focus Mode on a childless task triggers it; on tasks with child tasks (container tasks), the first child completion promotes the parent. Orbit inference uses split thresholds — 4h for atomic tasks, 3 days based on child activity for container tasks.
+
+> ⚠️ These orbit lifecycle thresholds are an initial approach and may need adjustment based on real use.
 
 ### 10. Structure & Capture
-Recurring tasks, personal patterns (saved breakdown templates), task dependencies, weekly review, and the Park It brain dump capture close the loop between planning and doing. The floating Park It button is always accessible, enabling frictionless thought capture in any context.
+Recurring tasks, personal patterns (saved breakdown templates), task dependencies, weekly review, and the Park It brain dump capture close the loop between planning and doing. The floating Park It button is always accessible, enabling frictionless thought capture in any context — including from within Focus Mode, so mid-session thoughts can be captured without breaking concentration.
 
 ---
 

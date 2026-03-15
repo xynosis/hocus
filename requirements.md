@@ -36,6 +36,7 @@
 - **REQ-TASK-05** Tasks are displayed reverse-chronologically by default.
 - **REQ-TASK-06** Task cards display: title, color tag, due date, working-on date, subtask progress, status, energy, interest, estimated time, recurrence badge, blocked badge.
 - **REQ-TASK-07** Marking a task done sets `completed_at` timestamp. Un-doing clears it.
+- **REQ-TASK-08** Marking any task done triggers a confetti celebration (fires from task card in all views).
 
 ### Non-Functional
 - **REQ-TASK-NF-01** Task creation completes with optimistic UI under 300ms perceived latency.
@@ -96,6 +97,12 @@
 - **REQ-FOCUS-09** Estimated time shown as a calm anchor below task title.
 - **REQ-FOCUS-10** If a task has prior progress (at least one child task done), a "Pick up where you left off" sheet is shown before entering Focus Mode. Shows last completed step, next pending step, and progress bar.
 - **REQ-FOCUS-11** On exit, if the task is not yet done, an optional note prompt asks "Where did you get to?". Saving creates a progress note. The prompt is skippable.
+- **REQ-FOCUS-12** A count-up elapsed time counter is shown below the task title in Focus Mode (e.g. "23 min in").
+- **REQ-FOCUS-13** On exit (any path), if at least 1 minute has elapsed, an automatic session summary note is saved: minutes worked, steps completed during the session, and timestamp.
+- **REQ-FOCUS-14** A "capture thought" button is accessible in the Focus Mode header, opening Park It to drop items to Inbox without leaving the session.
+- **REQ-FOCUS-15** After 90 minutes of continuous focus, a dismissable amber nudge banner appears: "Your brain works better with rest." Dismissing via "Keep going" suppresses it for the session.
+- **REQ-FOCUS-16** When the Pomodoro work interval ends, the break phase starts automatically and shows a directed break activity suggestion (e.g. "Get some water", "Stretch for 2 minutes").
+- **REQ-FOCUS-17** When the Pomodoro break interval ends, the timer stops and shows a re-entry confirmation screen ("Ready to come back?"). The next work session starts only when the user taps "Start next session".
 
 ### Non-Functional
 - **REQ-FOCUS-NF-01** Focus Mode uses no standard navigation chrome.
@@ -180,6 +187,11 @@
 - **REQ-UX-09** Errors shown inline with retry option — app never crashes.
 - **REQ-UX-10** Task cards use status-tinted backgrounds: red for overdue, purple for in_progress, sky for orbit, green for done, stone for default.
 - **REQ-UX-11** Warm stone background throughout (stone-50 / neutral-950 in dark mode).
+- **REQ-UX-12** DM Sans used as the heading font (h1/h2/h3) throughout the app.
+- **REQ-UX-13** Task cards use white background (dark: neutral-900) with shadow-sm to visually elevate against the page.
+- **REQ-UX-14** Bottom nav shows a thin purple pill above the active icon.
+- **REQ-UX-15** Today View header shows the current full date (e.g. "Sunday, 15 March") as a subtitle.
+- **REQ-UX-16** Today View drag handles are hidden at rest and appear on hover/press.
 
 ### Non-Functional
 - **REQ-UX-NF-01** Lighthouse mobile performance ≥ 85.
@@ -274,7 +286,9 @@
 
 ### Functional
 - **REQ-ORBIT-01** Tasks have an `orbit` status sitting between `in_progress` and `todo`.
-- **REQ-ORBIT-02** Orbit status is inferred automatically on app load: tasks where `status = 'in_progress'` and `updated_at` is more than 4h ago are moved to `orbit`.
+- **REQ-ORBIT-02** Orbit status is inferred automatically on app load, with two separate rules:
+  - **Atomic tasks** (no child tasks): orbit after `updated_at` > 4h ago.
+  - **Container tasks** (has child tasks): orbit after the most recent child's `updated_at` > 3 days ago.
 - **REQ-ORBIT-03** Users can manually set a task to orbit, or move it back to `in_progress`.
 - **REQ-ORBIT-04** Orbit tasks show a distinct calm visual treatment (sky tint) — communicates "live but paused", not "failed or abandoned".
 - **REQ-ORBIT-05** When a user taps an orbit task, task warming is shown: last subtask completed, time since last activity, user's own notes. Then two options: **Continue** (enters Focus Mode) or **Break it down** (opens TaskBreakdown).
@@ -282,6 +296,10 @@
 - **REQ-ORBIT-07** Tasks with a due date within 3 days that are still `todo` and have never been started are pulled into Today View with encouraging framing.
 - **REQ-ORBIT-08** The "upcoming + untouched" prompt uses encouraging, non-shaming language.
 - **REQ-ORBIT-09** Start Here scoring gives a boost to orbit tasks and to untouched tasks approaching their due date.
+- **REQ-ORBIT-10** When a user enters Focus Mode for an atomic task (no children) with status `todo`, the task is automatically set to `in_progress`. This ensures orbit inference has a timestamp to track.
+- **REQ-ORBIT-11** When a child task is first marked done and its parent task is still `todo`, the parent is automatically promoted to `in_progress`. This correctly activates orbit inference for container tasks.
+
+> ⚠️ **Design note (to revisit):** The split orbit threshold and auto-promotion rules (REQ-ORBIT-02, REQ-ORBIT-10, REQ-ORBIT-11) were introduced as an initial approach to support container/epic-style tasks. The exact thresholds (4h vs 3 days) and the trigger conditions are uncertain. Revisit after seeing this in use.
 
 ### Non-Functional
 - **REQ-ORBIT-NF-01** Orbit inference runs on app load via client-side check.

@@ -26,6 +26,7 @@ export interface Task {
   pattern_id: string | null
   recurrence: TaskRecurrence | null
   section_id: string | null
+  is_container: boolean
   created_at: string
   updated_at: string
   completed_at: string | null

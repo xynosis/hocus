@@ -15,6 +15,7 @@ export interface CreateTaskPayload {
   pattern_id?: string | null
   recurrence?: TaskRecurrence | null
   section_id?: string | null
+  is_container?: boolean
 }
 
 export interface UpdateTaskPayload {
@@ -32,6 +33,7 @@ export interface UpdateTaskPayload {
   pattern_id?: string | null
   recurrence?: TaskRecurrence | null
   section_id?: string | null
+  is_container?: boolean
 }
 
 export const useTasksStore = defineStore('tasks', () => {
@@ -99,6 +101,7 @@ export const useTasksStore = defineStore('tasks', () => {
       pattern_id: payload.pattern_id ?? null,
       recurrence: payload.recurrence ?? null,
       section_id: payload.section_id ?? null,
+      is_container: payload.is_container ?? false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       completed_at: null,
@@ -123,6 +126,7 @@ export const useTasksStore = defineStore('tasks', () => {
         pattern_id: payload.pattern_id ?? null,
         recurrence: payload.recurrence ?? null,
         section_id: payload.section_id ?? null,
+        is_container: payload.is_container ?? false,
       })
       .select()
       .single()
@@ -225,9 +229,22 @@ export const useTasksStore = defineStore('tasks', () => {
 
   async function inferOrbitTasks(): Promise<void> {
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000)
-    const candidates = tasks.value.filter(
-      t => t.status === 'in_progress' && new Date(t.updated_at) < fourHoursAgo
-    )
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    const candidates = tasks.value.filter(t => {
+      if (t.status !== 'in_progress') return false
+      const children = getChildTasks(t.id)
+      if (children.length === 0 && !t.is_container) {
+        // Atomic task: orbit after 4h of no activity on the task itself
+        return new Date(t.updated_at) < fourHoursAgo
+      } else {
+        // Container task: orbit after 3 days of no child activity
+        const lastChildActivity = children.reduce((latest, child) => {
+          const d = new Date(child.updated_at)
+          return d > latest ? d : latest
+        }, new Date(0))
+        return lastChildActivity < threeDaysAgo
+      }
+    })
     await Promise.all(candidates.map(t => setTaskStatus(t.id, 'orbit')))
   }
 

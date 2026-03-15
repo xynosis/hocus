@@ -174,6 +174,13 @@
         @delete="onDelete(task.id)" @door-opener="onDoorOpener(task)" @push="onPush(task)" />
     </div>
 
+    <!-- Drifted tasks (orbit but no date — not in main today list) -->
+    <div v-if="!searchTerm && !startHereActive && driftedTasks.length > 0" class="mt-4 flex flex-col gap-2">
+      <p class="px-2 text-sm text-neutral-400 dark:text-neutral-500">Drifted — tap to pick back up</p>
+      <TaskCard v-for="task in driftedTasks" :key="task.id" :task="task"
+        @delete="onDelete(task.id)" @push="onPush(task)" />
+    </div>
+
     <BaseModal v-model="showDeleteModal" title="Delete task?" confirm-label="Delete" @confirm="confirmDelete">
       <p class="text-sm text-neutral-600 dark:text-neutral-400">
         This will permanently remove the task. This can't be undone.
@@ -181,9 +188,6 @@
     </BaseModal>
 
     <FilterSheet v-model="showFilterSheet" :filters="filters" @update:filters="filters = $event" />
-
-    <OrbitWarmingSheet v-if="orbitWarmingTask" v-model="showOrbitSheet" :task="orbitWarmingTask"
-      @continue="handleOrbitContinue" @breakdown="handleOrbitBreakdown" />
 
     <DoorOpenerSheet v-if="doorOpenerTask" v-model="showDoorOpenerSheet" :task="doorOpenerTask" />
 
@@ -201,7 +205,6 @@ import type { TaskFilters } from '~/utils/filters'
 import BaseModal from '~/components/ui/BaseModal.vue'
 import FilterSheet from '~/components/ui/FilterSheet.vue'
 import SearchBar from '~/components/ui/SearchBar.vue'
-import OrbitWarmingSheet from '~/components/task/OrbitWarmingSheet.vue'
 import DoorOpenerSheet from '~/components/task/DoorOpenerSheet.vue'
 import PushSheet from '~/components/task/PushSheet.vue'
 import { VueDraggable } from 'vue-draggable-plus'
@@ -211,7 +214,7 @@ const todayLabel = computed(() =>
 )
 
 const tasksStore = useTasksStore()
-const { enterFocus } = useFocus()
+
 const { openReview } = useWeeklyReview()
 const { openTriage } = useBacklogTriage()
 const { openAvoidance } = useAvoidance()
@@ -332,28 +335,20 @@ const showCompleted = ref(false)
 const showDeleteModal = ref(false)
 const pendingDeleteId = ref<string | null>(null)
 
-// Orbit warming sheet
-const showOrbitSheet = ref(false)
-const orbitWarmingTask = ref<Task | null>(null)
-
 function onTaskClick(task: Task) {
-  if (task.status === 'orbit') {
-    orbitWarmingTask.value = task
-    showOrbitSheet.value = true
-  } else {
-    navigateTo(`/task/${task.id}`)
-  }
+  navigateTo(`/task/${task.id}`)
 }
 
-function handleOrbitContinue() {
-  showOrbitSheet.value = false
-  if (orbitWarmingTask.value) enterFocus(orbitWarmingTask.value.id)
-}
-
-function handleOrbitBreakdown() {
-  showOrbitSheet.value = false
-  if (orbitWarmingTask.value) navigateTo(`/task/${orbitWarmingTask.value.id}`)
-}
+// Orbit tasks with no date — not in main today list, shown in Drifted section
+const driftedTasks = computed(() =>
+  tasksStore.tasks.filter(t => {
+    if (t.status !== 'orbit' || t.parent_id !== null) return false
+    const today = new Date().toISOString().split('T')[0]!
+    const workingOnToday = t.working_on_date && t.working_on_date <= today
+    const dueToday = t.due_date && t.due_date <= today
+    return !workingOnToday && !dueToday
+  })
+)
 
 // Door opener sheet
 const showDoorOpenerSheet = ref(false)

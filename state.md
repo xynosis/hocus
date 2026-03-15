@@ -87,7 +87,18 @@ Three-tool suite for ADHD-friendly deep work:
 | Favicon | SVG — purple square, white checkmark, amber twinkle stars | `public/favicon.svg` |
 | Page title | Hocus | `nuxt.config.ts` app.head |
 | Deployment | Coolify on Hetzner, Dockerfile | Auto-deploys on push to main |
-| Orbit status | Inferred (client-side on app load) + manual set | tasks where status=in_progress and updated_at > 4h ago → orbit |
+| Orbit status | Inferred on app load, split by task type | Atomic tasks (no children): orbit after updated_at > 4h. Container tasks (has children): orbit after max(child.updated_at) > 3 days. ⚠️ Thresholds uncertain — revisit. |
+| in_progress on focus entry | Set automatically for atomic tasks | enterFocus() calls setTaskStatus(id, 'in_progress') if task has no children and status is 'todo' |
+| in_progress on child completion | Parent promoted to in_progress when first child done | ChildTaskItem.toggleDone() promotes parent if parent.status === 'todo'. Enables orbit inference on container tasks. |
+| Heading font | DM Sans (Google Fonts via CSS @import) | Applied to h1/h2/h3 via main.css; tailwindcss.cssPath must point to ~/assets/css/main.css |
+| Task card bg | white dark:neutral-900 + shadow-sm | Elevates off stone-50 page background |
+| Confetti | canvas-confetti fires on task completion | Fires from TaskCard.toggleDone (all views) + FocusView canvas (canvas-bound for z-index) |
+| Focus elapsed time | Count-up timer, shown below task title | "X min in"; starts on FocusView mount |
+| Focus session note | Auto-saved on any exit | Format: "Focus session · X min · N steps completed · date at time"; skipped if <1 min |
+| Focus Park It | openParkIt() composable in FocusView header | Small + icon button; ParkItSheet rendered in layout via Teleport |
+| Hyperfocus nudge | Inline amber banner at 90 min elapsed | Dismissable ("Keep going"); not blocking |
+| Pomodoro break activity | Random suggestion shown when break starts | 7 options; e.g. "Get some water", "Stretch for 2 minutes" |
+| Pomodoro re-entry | Manual confirmation required after break ends | waitingForReentry ref; "Start next session" button; break→work does NOT auto-start |
 | Task initiation | Door opener prompt after 3 days untouched | Single reflective prompt, micro-subtask flow |
 | Upcoming + untouched nudge | Due within 3 days + never started → pulled into Today View | Encouraging language, never shaming |
 | Task warming | Shown on orbit task tap | Last subtask, time since, Continue or Break it down |
@@ -121,6 +132,7 @@ Three-tool suite for ADHD-friendly deep work:
 - ParkItSheet and PushSheet use Teleport + Transition (bottom sheet pattern)
 - All global overlays are rendered in `app/layouts/default.vue`
 - Watch calls in index.vue must be OUTSIDE computed functions — temporal dead zone bug if `watch(..., { immediate: true })` references a ref declared later in the same setup block
+- `tailwindcss: { cssPath: '~/assets/css/main.css' }` in nuxt.config.ts is required — without it, `@nuxtjs/tailwindcss` uses its own virtual CSS module and ignores main.css entirely (custom font rules etc. won't apply)
 - New Supabase tables (project_sections, task_notes) accessed via `(supabase as any).from(...)` until types are regenerated
 
 ## File Structure
@@ -182,9 +194,11 @@ hocus/
 > ⚠️ Run `supabase db push` to apply the three pending migrations.
 
 ## Current Position
-- **Phase:** Phase 10 in progress.
-- **Completed in Phase 10:** Full-text search, project sections (add/rename/delete/reorder), progress notes, end-of-focus note, drag-to-reorder Today, Park It capture, avoidance detector, backlog triage, visual redesign (stone bg + status tints), Inbox rename, end-of-day sweep. Phase 10 complete.
-- **Phase 11 complete:** Next 7 Days + Calendar views done.
+- **Phase:** Phase 12 complete + orbit lifecycle fixes.
+- **Completed in Phase 12:** Visual design overhaul (DM Sans headers, card elevation, heading sizes, drag handle opacity, action row, bottom nav pill, focus mode styling, sidebar cleanup), confetti on all task completions, Focus Mode elapsed timer, auto session summary notes, Park It in Focus Mode, 90-min hyperfocus nudge, Pomodoro break activity suggestions, Pomodoro re-entry confirmation.
+- **Post-12 (orbit lifecycle):** Split orbit inference thresholds (4h atomic / 3 days container). Auto-set in_progress on Focus Mode entry for atomic tasks. Auto-promote parent to in_progress when first child completed.
+- **Next:** Phase 13 — Backend Formalisation (Node + Hono API).
+- **⚠️ To revisit:** orbit lifecycle thresholds and trigger conditions (split threshold approach is uncertain — review after real use).
 - **Pending migrations to push:** `20260318000000`, `20260318000001`, `20260318000002`
 - **Type debt:** project_sections and task_notes not in generated Supabase types — re-run `supabase gen types typescript --linked > app/types/database.types.ts` after pushing migrations.
 - **Blockers:** None.
@@ -196,7 +210,7 @@ hocus/
 - Backend formalisation — Node + Hono API (Phase 12)
 - Email to task
 - Keyboard shortcuts — `P` Park It, `F` focus, `N` new task (desktop)
-- Focus session history log
+- ~~Focus session history log~~ — done via auto session summary notes (Phase 12)
 - Spatial canvas (separate tool — long term)
 - Distraction-free writing (separate tool — long term)
 - Collaboration / shared lists (v3/v4)

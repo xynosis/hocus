@@ -36,7 +36,7 @@
                 <span v-if="task.status === 'done'" class="text-white text-xs">✓</span>
             </button>
 
-            <div class="flex-1 min-w-0 cursor-pointer" @click="emit('click')">
+            <div class="flex-1 min-w-0 cursor-pointer" @click="onCardClick">
                 <p class="text-base font-medium leading-snug" :class="task.status === 'done'
                     ? 'line-through text-green-700 dark:text-green-400'
                     : 'text-neutral-800 dark:text-neutral-100'">
@@ -58,7 +58,7 @@
                     </span>
                     <span v-if="task.status === 'orbit'"
                         class="text-xs text-sky-500 dark:text-sky-400 font-medium">
-                        Quiet
+                        Drifted?
                     </span>
 
                     <span v-if="task.due_date" class="text-xs" :class="task.status === 'done'
@@ -165,6 +165,15 @@ const emit = defineEmits<{
 
 const tasksStore = useTasksStore()
 const { enterFocus } = useFocus()
+const { open: openOrbitWarming } = useOrbitWarming()
+
+function onCardClick() {
+  if (props.task.status === 'orbit') {
+    openOrbitWarming(props.task)
+  } else {
+    emit('click')
+  }
+}
 
 function toggleDone() {
     const next = props.task.status === 'done' ? 'todo' : 'done'

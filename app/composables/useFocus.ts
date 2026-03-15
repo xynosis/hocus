@@ -7,6 +7,14 @@ export const useFocus = () => {
     const children = tasksStore.getChildTasks(taskId)
     const hasPriorProgress = children.length > 0 && children.some(c => c.status === 'done')
 
+    // Atomic tasks: set in_progress on focus entry so orbit inference has something to track
+    if (children.length === 0) {
+      const task = tasksStore.getTaskById(taskId)
+      if (task && task.status === 'todo') {
+        tasksStore.setTaskStatus(taskId, 'in_progress')
+      }
+    }
+
     if (hasPriorProgress) {
       pickUpTaskId.value = taskId
     } else {

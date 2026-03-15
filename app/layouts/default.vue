@@ -58,6 +58,14 @@
     </button>
 
     <ParkItSheet v-model="parkItOpen" />
+
+    <OrbitWarmingSheet
+      v-if="orbitTask"
+      v-model="orbitWarmingOpen"
+      :task="orbitTask"
+      @continue="onOrbitContinue"
+      @breakdown="onOrbitBreakdown"
+    />
   </div>
 </template>
 
@@ -72,11 +80,23 @@ import BacklogTriage from '~/components/backlog/BacklogTriage.vue'
 import AvoidanceTriage from '~/components/backlog/AvoidanceTriage.vue'
 import ParkItSheet from '~/components/task/ParkItSheet.vue'
 import EndOfDaySweep from '~/components/review/EndOfDaySweep.vue'
+import OrbitWarmingSheet from '~/components/task/OrbitWarmingSheet.vue'
 import { useTasksStore } from '~/stores/tasks'
 import { useProjectsStore } from '~/stores/projects'
 import type { CreateTaskPayload } from '~/stores/tasks'
 
-const { focusTaskId, pickUpTaskId, confirmPickUp, dismissPickUp } = useFocus()
+const { focusTaskId, pickUpTaskId, confirmPickUp, dismissPickUp, enterFocus } = useFocus()
+const { orbitTask, isOpen: orbitWarmingOpen, close: closeOrbitWarming } = useOrbitWarming()
+
+function onOrbitContinue() {
+  if (orbitTask.value) enterFocus(orbitTask.value.id)
+  closeOrbitWarming()
+}
+
+function onOrbitBreakdown() {
+  if (orbitTask.value) navigateTo(`/task/${orbitTask.value.id}?breakdown=1`)
+  closeOrbitWarming()
+}
 const { isOpen: reviewOpen } = useWeeklyReview()
 const { isOpen: triageOpen } = useBacklogTriage()
 const { isOpen: avoidanceOpen } = useAvoidance()

@@ -155,7 +155,7 @@ const localActiveCount = computed(() => activeFilterCount(local))
 const statusOptions: { value: TaskStatus; label: string }[] = [
   { value: 'todo', label: 'To do' },
   { value: 'in_progress', label: 'In progress' },
-  { value: 'orbit', label: 'Quiet' },
+  { value: 'orbit', label: 'Drifted?' },
   { value: 'done', label: 'Done' },
 ]
 

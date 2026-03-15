@@ -97,19 +97,50 @@ Recurring tasks, task dependencies, project templates, "pick up this task", week
 | 11.3 | Calendar view — monthly grid, task dots per day, month navigation ✅ |
 | 11.4 | Tap a day: detail panel with task list + "+ Add" shortcut ✅ |
 
-## Phase 12 — Backend Formalisation _(planned)_
+## Phase 12 — ADHD Focus & Visual Polish ✅
+
+| Task | Description |
+|---|---|
+| 12.1 | Visual redesign — DM Sans header font, card white bg + shadow, text-2xl/3xl page headings ✅ |
+| 12.2 | Today header shows current date below title ✅ |
+| 12.3 | Drag handles fade in on hover/press (reduce visual noise) ✅ |
+| 12.4 | Bottom nav active pill indicator ✅ |
+| 12.5 | Action row on Today simplified to plain text links; Backlog/Avoiding hidden when count = 0 ✅ |
+| 12.6 | Focus Mode: stone-50 background, text-4xl task title ✅ |
+| 12.7 | Sidebar: remove "Other" section label ✅ |
+| 12.8 | Confetti fires on task completion from any card (not only Focus Mode) ✅ |
+| 12.9 | Focus Mode: elapsed time counter (count-up, shown below task title) ✅ |
+| 12.10 | Focus Mode: auto session summary note on exit — minutes worked, steps completed, timestamp ✅ |
+| 12.11 | Focus Mode: Park It accessible via capture button in header ✅ |
+| 12.12 | Focus Mode: 90-minute hyperfocus nudge — soft inline banner, dismissable ✅ |
+| 12.13 | Pomodoro: directed break activity suggestion shown when break phase starts ✅ |
+| 12.14 | Pomodoro: re-entry confirmation screen after break ends — tap to start next session ✅ |
+
+## Phase 12.5 — Orbit Lifecycle Fix ✅
+
+> ⚠️ Approach uncertain — revisit thresholds after real-world use.
+
+| Task | Description |
+|---|---|
+| 12.5.1 | Split `inferOrbitTasks()`: atomic tasks orbit after 4h on `updated_at`; container tasks orbit after 3 days on `max(child.updated_at)` ✅ |
+| 12.5.2 | `enterFocus()` auto-sets `in_progress` for atomic tasks (no children) with status `todo` ✅ |
+| 12.5.3 | `ChildTaskItem.toggleDone()` promotes parent to `in_progress` when first child completed and parent is still `todo` ✅ |
+
+---
+
+## Phase 13 — Backend Formalisation _(planned)_
 
 **Goal:** Replace client-side business logic with a proper API layer. Stabilise after Phase 10 when the core data model has settled.
 
 | Task | Description |
 |---|---|
-| 12.1 | Evaluate and select API framework (Node + Hono recommended) |
-| 12.2 | Set up API service alongside Supabase — auth via Supabase JWT verification |
-| 12.3 | Move orbit inference to scheduled job (replaces client-side app load check) |
-| 12.4 | Move email-to-task handler to API (inbound email webhook) |
-| 12.5 | Move weekly review generation to API |
-| 12.6 | Set up deployment pipeline for API service on Hetzner via Coolify |
-| 12.7 | Future: push notifications, calendar sync, third-party integrations |
+| 13.1 | Evaluate and select API framework (Node + Hono recommended) |
+| 13.2 | Set up API service alongside Supabase — auth via Supabase JWT verification |
+| 13.3 | Move orbit inference to scheduled job (replaces client-side app load check) |
+| 13.4 | Move email-to-task handler to API (inbound email webhook) |
+| 13.5 | Move weekly review generation to API |
+| 13.6 | Set up deployment pipeline for API service on Hetzner via Coolify |
+| 13.7 | Future: push notifications, calendar sync, third-party integrations |
 
 **Rationale:** Data model is still actively changing through Phases 9–11. Building scheduled/backend logic on an unstable schema is expensive.
 
