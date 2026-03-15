@@ -1,8 +1,7 @@
-# Focus Flow
+# Hocus
 
-A calm, structured to-do list built for ADHD brains. Focus Flow helps you decide what to work on, break it into manageable pieces, and actually start — without the overwhelm.
+A calm, structured to-do list built for ADHD brains. Hocus helps you decide what to work on, break it into manageable pieces, and actually start — without the overwhelm.
 
-Live at [todo.kierancutting.co.uk](https://todo.kierancutting.co.uk)
 
 ---
 

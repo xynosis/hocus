@@ -120,8 +120,21 @@
                     </div>
 
                     <!-- Sections -->
-                    <div v-for="section in projectSections" :key="section.id" class="flex flex-col gap-3">
+                    <VueDraggable v-model="localSections" handle=".section-drag-handle" :animation="150" item-key="id" tag="div" class="flex flex-col gap-0" @end="onSectionDragEnd">
+                    <div v-for="section in localSections" :key="section.id" class="flex flex-col gap-3">
                         <div class="flex items-center gap-2 px-1 mt-2">
+                            <button
+                                class="section-drag-handle flex items-center justify-center text-neutral-300 dark:text-neutral-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+                                style="min-width: 20px; min-height: 32px;" aria-label="Drag to reorder" @click.prevent>
+                                <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+                                    <circle cx="2.5" cy="2" r="1.1" fill="currentColor"/>
+                                    <circle cx="7.5" cy="2" r="1.1" fill="currentColor"/>
+                                    <circle cx="2.5" cy="6" r="1.1" fill="currentColor"/>
+                                    <circle cx="7.5" cy="6" r="1.1" fill="currentColor"/>
+                                    <circle cx="2.5" cy="10" r="1.1" fill="currentColor"/>
+                                    <circle cx="7.5" cy="10" r="1.1" fill="currentColor"/>
+                                </svg>
+                            </button>
                             <template v-if="editingSectionId === section.id">
                                 <input
                                     ref="sectionNameInput"
@@ -185,6 +198,7 @@
                             </template>
                         </template>
                     </div>
+                    </VueDraggable>
 
                     <!-- Add section button -->
                     <button type="button"
@@ -239,6 +253,7 @@ import FilterSheet from '~/components/ui/FilterSheet.vue'
 import SearchBar from '~/components/ui/SearchBar.vue'
 import BaseModal from '~/components/ui/BaseModal.vue'
 import type { CreateTaskPayload } from '~/stores/tasks'
+import { VueDraggable } from 'vue-draggable-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -246,7 +261,15 @@ const projectsStore = useProjectsStore()
 const tasksStore = useTasksStore()
 
 const project = computed(() => projectsStore.getProjectById(route.params.id as string))
-const projectSections = computed(() => projectsStore.getSectionsForProject(route.params.id as string))
+
+const localSections = ref<ProjectSection[]>([])
+watch(() => projectsStore.getSectionsForProject(route.params.id as string), (s) => {
+    localSections.value = [...s]
+}, { immediate: true })
+
+function onSectionDragEnd() {
+    projectsStore.reorderSections(localSections.value.map(s => s.id))
+}
 
 const showCompleted = ref(false)
 const sectionShowCompleted = reactive(new Set<string>())

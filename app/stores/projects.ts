@@ -49,7 +49,7 @@ export const useProjectsStore = defineStore('projects', () => {
             .map(tp => tp.task_id)
     }
 
-    function getMiscTaskIds(): string[] {
+    function getInboxTaskIds(): string[] {
         const assignedTaskIds = new Set(taskProjects.value.map(tp => tp.task_id))
         const tasksStore = useTasksStore()
         return tasksStore.tasks
@@ -306,6 +306,20 @@ export const useProjectsStore = defineStore('projects', () => {
         }
     }
 
+    async function reorderSections(orderedIds: string[]): Promise<void> {
+        // Optimistically update sort_order in local state
+        orderedIds.forEach((id, index) => {
+            const s = sections.value.find(s => s.id === id)
+            if (s) s.sort_order = index
+        })
+
+        await Promise.all(
+            orderedIds.map((id, index) =>
+                sectionsClient().update({ sort_order: index }).eq('id', id)
+            )
+        )
+    }
+
     async function syncTaskProjects(taskId: string, projectIds: string[]): Promise<void> {
         const current = getProjectIdsForTask(taskId)
         const toAdd = projectIds.filter(id => !current.includes(id))
@@ -326,7 +340,7 @@ export const useProjectsStore = defineStore('projects', () => {
         getProjectById,
         getProjectIdsForTask,
         getTaskIdsForProject,
-        getMiscTaskIds,
+        getInboxTaskIds,
         getSectionsForProject,
         fetchProjects,
         fetchTaskProjects,
@@ -340,5 +354,6 @@ export const useProjectsStore = defineStore('projects', () => {
         addSection,
         updateSection,
         deleteSection,
+        reorderSections,
     }
 })

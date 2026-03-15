@@ -15,17 +15,15 @@
           </div>
 
           <p class="text-sm text-neutral-400 dark:text-neutral-500 -mt-1">
-            Dump it here, get back to what you were doing.
+            One item per line. Dump everything, sort it later.
           </p>
 
           <textarea
             ref="inputRef"
             v-model="body"
-            placeholder="What's on your mind?"
-            rows="3"
+            placeholder="Buy milk&#10;Email Sarah&#10;Fix the thing..."
+            rows="5"
             class="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2.5 text-sm bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
-            @keydown.meta.enter="submit"
-            @keydown.ctrl.enter="submit"
           />
 
           <button
@@ -35,7 +33,7 @@
             :disabled="!body.trim()"
             @click="submit"
           >
-            Park it
+            Park {{ itemCount > 1 ? `${itemCount} items` : 'it' }}
           </button>
         </div>
       </div>
@@ -53,6 +51,10 @@ const tasksStore = useTasksStore()
 const body = ref('')
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 
+const itemCount = computed(() =>
+  body.value.split('\n').filter(l => l.trim()).length
+)
+
 watch(() => props.modelValue, (val) => {
   if (val) {
     body.value = ''
@@ -65,9 +67,9 @@ function close() {
 }
 
 async function submit() {
-  const text = body.value.trim()
-  if (!text) return
-  await tasksStore.addTask({ title: text })
+  const lines = body.value.split('\n').map(l => l.trim()).filter(Boolean)
+  if (!lines.length) return
+  await Promise.all(lines.map(title => tasksStore.addTask({ title })))
   close()
 }
 </script>

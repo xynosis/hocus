@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+  <div class="min-h-screen bg-stone-50 dark:bg-neutral-950">
     <AppSidebar
       class="hidden sm:flex"
       @open-task-sheet="isSheetOpen = true"
@@ -9,10 +9,7 @@
       <slot />
     </div>
 
-    <AppNav
-      class="sm:hidden"
-      @open-task-sheet="isSheetOpen = true"
-    />
+    <AppNav class="sm:hidden" />
 
     <TaskForm v-model="isSheetOpen" @submit="onTaskSubmit" />
 
@@ -43,12 +40,16 @@
       <AvoidanceTriage v-if="avoidanceOpen" />
     </Transition>
 
+    <Transition name="focus">
+      <EndOfDaySweep v-if="sweepOpen" />
+    </Transition>
+
     <!-- Park it floating button -->
     <button
       v-if="!focusTaskId"
       type="button"
       aria-label="Park a thought"
-      class="fixed bottom-24 right-4 sm:bottom-8 sm:right-8 z-40 w-12 h-12 rounded-full bg-amber-400 dark:bg-amber-500 text-white shadow-lg flex items-center justify-center hover:bg-amber-500 dark:hover:bg-amber-400 active:scale-95 transition-all"
+      class="fixed bottom-24 right-4 sm:bottom-8 sm:right-8 z-40 w-12 h-12 rounded-full bg-purple-500 dark:bg-purple-600 text-white shadow-lg flex items-center justify-center hover:bg-purple-600 dark:hover:bg-purple-500 active:scale-95 transition-all"
       @click="openParkIt"
     >
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -70,6 +71,7 @@ import WeeklyReview from '~/components/review/WeeklyReview.vue'
 import BacklogTriage from '~/components/backlog/BacklogTriage.vue'
 import AvoidanceTriage from '~/components/backlog/AvoidanceTriage.vue'
 import ParkItSheet from '~/components/task/ParkItSheet.vue'
+import EndOfDaySweep from '~/components/review/EndOfDaySweep.vue'
 import { useTasksStore } from '~/stores/tasks'
 import { useProjectsStore } from '~/stores/projects'
 import type { CreateTaskPayload } from '~/stores/tasks'
@@ -79,6 +81,7 @@ const { isOpen: reviewOpen } = useWeeklyReview()
 const { isOpen: triageOpen } = useBacklogTriage()
 const { isOpen: avoidanceOpen } = useAvoidance()
 const { isOpen: parkItOpen, openParkIt } = useParkIt()
+const { isOpen: sweepOpen } = useEndOfDaySweep()
 
 const showPickUp = computed({
   get: () => !!pickUpTaskId.value,

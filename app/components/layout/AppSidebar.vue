@@ -1,6 +1,6 @@
 <template>
     <aside
-        class="fixed left-0 top-0 bottom-0 w-56 bg-white dark:bg-neutral-900 border-r border-neutral-100 dark:border-neutral-800 flex flex-col z-30">
+        class="fixed left-0 top-0 bottom-0 w-56 bg-stone-50 dark:bg-neutral-900 border-r border-stone-200 dark:border-neutral-800 flex flex-col z-30">
         <div class="px-4 py-5 border-b border-neutral-100 dark:border-neutral-800">
             <h1 class="text-base font-semibold text-neutral-800 dark:text-neutral-100">Hocus</h1>
         </div>
@@ -50,15 +50,45 @@
                     class="text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">Other</span>
             </div>
 
-            <NuxtLink to="/misc" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
-                :class="route.path === '/misc'
+            <NuxtLink to="/week" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+                :class="route.path === '/week'
+                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+                style="min-height: 44px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+                Next 7 days
+            </NuxtLink>
+
+            <NuxtLink to="/calendar" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+                :class="route.path === '/calendar'
+                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+                style="min-height: 44px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="2" width="14" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <path d="M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                    <path d="M1 6h14" stroke="currentColor" stroke-width="1.4"/>
+                    <circle cx="5" cy="10" r="1" fill="currentColor"/>
+                    <circle cx="8" cy="10" r="1" fill="currentColor"/>
+                    <circle cx="11" cy="10" r="1" fill="currentColor"/>
+                </svg>
+                Calendar
+            </NuxtLink>
+
+            <NuxtLink to="/inbox" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+                :class="route.path === '/inbox'
                     ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
                     : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
                 style="min-height: 44px;">
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path d="M3 5H17M3 10H17M3 15H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M2 12H6L8 15H12L14 12H18" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path d="M2 12V16C2 16.6 2.4 17 3 17H17C17.6 17 18 16.6 18 16V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M10 3V11M7 8L10 11L13 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Misc
+                Inbox
             </NuxtLink>
 
             <button

@@ -2,7 +2,17 @@
   <div class="p-4">
     <!-- Normal Today header -->
     <div v-if="!startHereActive" class="flex items-center justify-between px-2 py-3">
-      <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Today</h1>
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Today</h1>
+        <NuxtLink to="/week"
+          class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors flex items-center gap-1">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+            <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          7 days
+        </NuxtLink>
+      </div>
       <div class="flex items-center gap-1">
         <SearchBar v-model="search" />
         <button v-if="todayTasks.length > 1" type="button"
@@ -131,11 +141,16 @@
     </template>
 
     <!-- Weekly review + backlog triage + avoidance entry -->
-    <div v-if="!startHereActive && !searchTerm" class="px-2 flex gap-2">
+    <div v-if="!startHereActive && !searchTerm" class="px-2 flex gap-2 flex-wrap">
       <button type="button"
         class="flex-1 py-2.5 rounded-xl text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
         style="min-height: 44px;" @click="openReview">
         Weekly review
+      </button>
+      <button type="button"
+        class="flex-1 py-2.5 rounded-xl text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        style="min-height: 44px;" @click="openSweep">
+        End of day
       </button>
       <button type="button" class="flex-1 py-2.5 rounded-xl text-sm transition-colors border" :class="backlogCount > 0
         ? 'text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:text-neutral-600 dark:hover:text-neutral-300'
@@ -195,7 +210,14 @@ const { enterFocus } = useFocus()
 const { openReview } = useWeeklyReview()
 const { openTriage } = useBacklogTriage()
 const { openAvoidance } = useAvoidance()
+const { openSweep } = useEndOfDaySweep()
 const { applyOrder, saveOrder } = useTodayOrder()
+
+// Search and filters must be declared before computeds that use them
+const search = ref('')
+const showFilterSheet = ref(false)
+const filters = ref<TaskFilters>(emptyFilters())
+const filterCount = computed(() => activeFilterCount(filters.value))
 
 const STALE_DAYS = 3
 const avoidanceCount = computed(() =>
@@ -207,8 +229,6 @@ const avoidanceCount = computed(() =>
 )
 
 const todayTasksOrdered = ref<Task[]>([])
-
-
 
 function onDragEnd() {
   saveOrder(todayTasksOrdered.value.map(t => t.id))
@@ -229,9 +249,6 @@ const todayTasks = computed(() => {
       (t.notes?.toLowerCase().includes(searchTerm.value) ?? false)
     )
   }
-  watch(todayTasks, (newTasks) => {
-    todayTasksOrdered.value = applyOrder(newTasks)
-  }, { immediate: true })
 
   const filtered = tasksStore.tasks.filter(task => {
     if (task.status === 'done') return false
@@ -264,6 +281,10 @@ const todayTasks = computed(() => {
   })
 })
 
+watch(todayTasks, (newTasks) => {
+  todayTasksOrdered.value = applyOrder(newTasks)
+}, { immediate: true })
+
 const completedToday = computed(() =>
   tasksStore.tasks
     .filter(t => t.status === 'done' && t.completed_at && isToday(t.completed_at))
@@ -287,14 +308,6 @@ function formatTime(isoString: string): string {
   return new Date(isoString).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
-
-// Search
-const search = ref('')
-
-// Filters
-const showFilterSheet = ref(false)
-const filters = ref<TaskFilters>(emptyFilters())
-const filterCount = computed(() => activeFilterCount(filters.value))
 
 // Start Here
 const startHereActive = ref(false)

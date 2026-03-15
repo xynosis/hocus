@@ -1,7 +1,7 @@
 <template>
     <div class="p-4">
         <div class="flex items-center justify-between px-2 py-3">
-          <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Misc</h1>
+          <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Inbox</h1>
           <SearchBar v-model="search" />
           <button
             type="button"
@@ -31,24 +31,24 @@
         </div>
 
         <template v-else>
-            <div v-if="miscTasks.length === 0 && completedMiscTasks.length === 0"
+            <div v-if="inboxTasks.length === 0 && completedInboxTasks.length === 0"
                 class="flex flex-col items-center justify-center py-20 gap-2">
-                <p class="text-neutral-400 dark:text-neutral-500 text-base">No loose tasks.</p>
+                <p class="text-neutral-400 dark:text-neutral-500 text-base">Inbox is clear.</p>
                 <p class="text-neutral-400 dark:text-neutral-500 text-sm">Everything is in a project.</p>
             </div>
 
             <div v-else class="flex flex-col gap-3">
-                <div v-if="miscTasks.length === 0 && !showCompleted"
+                <div v-if="inboxTasks.length === 0 && !showCompleted"
                     class="flex flex-col items-center justify-center py-8 gap-2">
                     <p class="text-neutral-400 dark:text-neutral-500 text-sm">All loose tasks are done.</p>
                 </div>
 
-                <TaskCard v-for="task in miscTasks" :key="task.id" :task="task"
+                <TaskCard v-for="task in inboxTasks" :key="task.id" :task="task"
                     :search-term="search.trim().toLowerCase() || undefined"
                     @click="navigateTo(`/task/${task.id}`)"
                     @delete="onDelete(task.id)" />
 
-                <template v-if="completedMiscTasks.length > 0">
+                <template v-if="completedInboxTasks.length > 0">
                     <button type="button"
                         class="flex items-center gap-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-500 dark:hover:text-neutral-400 transition-colors px-1 py-2"
                         @click="showCompleted = !showCompleted">
@@ -57,12 +57,12 @@
                             <path d="M2 4L7 9L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
                                 stroke-linejoin="round" />
                         </svg>
-                        {{ showCompleted ? 'Hide completed' : `Show completed (${completedMiscTasks.length})` }}
+                        {{ showCompleted ? 'Hide completed' : `Show completed (${completedInboxTasks.length})` }}
                     </button>
 
                     <template v-if="showCompleted">
                         <div class="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex flex-col gap-3">
-                            <TaskCard v-for="task in completedMiscTasks" :key="task.id" :task="task"
+                            <TaskCard v-for="task in completedInboxTasks" :key="task.id" :task="task"
                                 @click="navigateTo(`/task/${task.id}`)" @delete="onDelete(task.id)" />
                         </div>
                     </template>
@@ -96,12 +96,12 @@ const showFilterSheet = ref(false)
 const filters = ref<TaskFilters>(emptyFilters())
 const filterCount = computed(() => activeFilterCount(filters.value))
 
-const allMiscTasks = computed(() => {
-    const miscTaskIds = new Set(projectsStore.getMiscTaskIds())
-    return tasksStore.sortedTasks.filter(t => miscTaskIds.has(t.id))
+const allInboxTasks = computed(() => {
+    const inboxTaskIds = new Set(projectsStore.getInboxTaskIds())
+    return tasksStore.sortedTasks.filter(t => inboxTaskIds.has(t.id))
 })
 
-const miscTasks = computed(() => {
+const inboxTasks = computed(() => {
     const searchTerm = search.value.trim().toLowerCase()
     if (searchTerm) {
         return tasksStore.sortedTasks.filter(t =>
@@ -109,12 +109,12 @@ const miscTasks = computed(() => {
       (t.notes?.toLowerCase().includes(searchTerm) ?? false)
     )
     }
-    const base = allMiscTasks.value.filter(t => t.status !== 'done')
+    const base = allInboxTasks.value.filter(t => t.status !== 'done')
     return applyFilters(base, filters.value)
 })
 
-const completedMiscTasks = computed(() =>
-    allMiscTasks.value.filter(t => t.status === 'done')
+const completedInboxTasks = computed(() =>
+    allInboxTasks.value.filter(t => t.status === 'done')
 )
 
 onUnmounted(() => {

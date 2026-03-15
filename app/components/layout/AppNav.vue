@@ -1,5 +1,5 @@
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-neutral-900 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-around px-4 pb-safe">
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-stone-50 dark:bg-neutral-900 border-t border-stone-200 dark:border-neutral-800 flex items-center justify-around px-4 pb-safe">
     <NuxtLink
       to="/"
       class="flex flex-col items-center justify-center gap-1 text-xs transition-colors"
@@ -30,30 +30,20 @@
       <span>Projects</span>
     </NuxtLink>
 
-    <button
-      type="button"
-      aria-label="Add new task"
-      class="flex items-center justify-center rounded-full bg-purple-500 active:bg-purple-600 transition-colors shadow-sm"
-      style="width: 52px; height: 52px;"
-      @click="emit('open-task-sheet')"
-    >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </button>
-
     <NuxtLink
-      to="/misc"
+      to="/inbox"
       class="flex flex-col items-center justify-center gap-1 text-xs transition-colors"
-      :class="route.path === '/misc'
+      :class="route.path === '/inbox'
         ? 'text-purple-500 dark:text-purple-400'
         : 'text-neutral-400 dark:text-neutral-500'"
       style="min-width: 64px; min-height: 44px;"
     >
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M3 5H17M3 10H17M3 15H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M2 12H6L8 15H12L14 12H18" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M2 12V16C2 16.6 2.4 17 3 17H17C17.6 17 18 16.6 18 16V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M10 3V11M7 8L10 11L13 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span>Misc</span>
+      <span>Inbox</span>
     </NuxtLink>
 
     <NuxtLink
@@ -75,8 +65,4 @@
 
 <script setup lang="ts">
 const route = useRoute()
-
-const emit = defineEmits<{
-  'open-task-sheet': []
-}>()
 </script>
