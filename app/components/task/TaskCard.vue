@@ -6,7 +6,7 @@
             <span class="text-sm font-medium text-white">Delete</span>
         </div>
 
-        <div class="relative border rounded-2xl p-4 flex gap-3 transition-all" :class="task.status === 'done'
+        <div class="relative border rounded-2xl p-4 flex gap-3 transition-all shadow-sm" :class="task.status === 'done'
             ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
             : task.status === 'orbit'
               ? 'bg-sky-50 dark:bg-sky-950 border-sky-200 dark:border-sky-900'
@@ -14,7 +14,7 @@
                 ? 'bg-purple-50 dark:bg-purple-950 border-purple-100 dark:border-purple-900'
                 : isOverdue(task.due_date ?? '') && task.due_date
                   ? 'bg-red-50 dark:bg-red-950 border-red-100 dark:border-red-900'
-                  : 'bg-stone-50 dark:bg-neutral-900 border-stone-200 dark:border-neutral-800'" :style="{
+                  : 'bg-white dark:bg-neutral-900 border-neutral-100 dark:border-neutral-800'" :style="{
                 transform: `translateX(${swipeX}px)`,
                 borderLeftWidth: '4px',
                 borderLeftColor: task.status === 'done'
@@ -25,7 +25,7 @@
                         ? '#9333ea'
                         : (task.due_date && isOverdue(task.due_date))
                           ? '#ef4444'
-                          : (colorHex ?? 'transparent'),
+                          : (colorHex ?? '#d6d3d1'),
             }">
             <button type="button" :aria-label="task.status === 'done' ? 'Mark as not done' : 'Mark as done'"
                 class="flex-shrink-0 mt-0.5 rounded-full border-2 flex items-center justify-center transition-colors"
@@ -123,6 +123,7 @@ import { isOverdue, formatDate } from '~/utils/dates'
 import { getColorHex } from '~/utils/colors'
 import { inferTaskSize } from '~/utils/taskSize'
 import { useDependenciesStore } from '~/stores/dependencies'
+import confetti from 'canvas-confetti'
 
 const colorHex = computed(() => getColorHex(props.task.color_tag))
 const taskSize = computed(() => inferTaskSize(props.task.estimated_minutes))
@@ -168,6 +169,14 @@ const { enterFocus } = useFocus()
 function toggleDone() {
     const next = props.task.status === 'done' ? 'todo' : 'done'
     tasksStore.setTaskStatus(props.task.id, next)
+    if (next === 'done') {
+        confetti({
+            particleCount: 120,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#7F77DD', '#639922', '#EF9F27', '#378ADD', '#D4537E'],
+        })
+    }
 }
 
 const swipeX = ref(0)

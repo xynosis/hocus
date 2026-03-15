@@ -1,6 +1,6 @@
 <template>
     <div class="p-4 max-w-lg mx-auto">
-        <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100 px-2 py-3">
+        <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100 px-2 py-3">
             Account
         </h1>
 

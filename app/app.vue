@@ -39,15 +39,14 @@ async function loadUserData() {
 onMounted(async () => {
   await authStore.init()
 
-  const { data } = await supabase.auth.getSession()
-  if (data.session) {
-    await loadUserData()
-  }
+  let dataLoaded = false
 
-  supabase.auth.onAuthStateChange(async (event) => {
-    if (event === 'SIGNED_IN') {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session && !dataLoaded && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+      dataLoaded = true
       await loadUserData()
     } else if (event === 'SIGNED_OUT') {
+      dataLoaded = false
       tasksStore.tasks = []
       projectsStore.projects = []
       projectsStore.taskProjects = []

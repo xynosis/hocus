@@ -1,104 +1,149 @@
 <template>
   <div class="flex flex-col items-center gap-4">
-    <div
-      class="flex flex-col items-center justify-center rounded-full transition-colors duration-500"
-      :class="phase === 'work'
-        ? 'bg-purple-50 dark:bg-purple-950'
-        : 'bg-green-50 dark:bg-green-950'"
-      style="width: 160px; height: 160px;"
-    >
-      <span
-        class="text-4xl font-semibold tabular-nums transition-colors duration-500"
-        :class="phase === 'work'
-          ? 'text-purple-600 dark:text-purple-300'
-          : 'text-green-600 dark:text-green-300'"
-      >
-        {{ formattedTime }}
-      </span>
-      <span
-        class="text-xs font-medium mt-1 transition-colors duration-500"
-        :class="phase === 'work'
-          ? 'text-purple-400 dark:text-purple-500'
-          : 'text-green-400 dark:text-green-500'"
-      >
-        {{ phase === 'work' ? 'Focus' : 'Break' }}
-      </span>
-    </div>
 
-    <div class="flex gap-3">
-      <button
-        type="button"
-        class="px-5 py-2 rounded-xl text-sm font-medium transition-colors"
-        :class="phase === 'work'
-          ? 'bg-purple-500 hover:bg-purple-600 text-white'
-          : 'bg-green-500 hover:bg-green-600 text-white'"
-        style="min-height: 44px; min-width: 88px;"
-        @click="toggleTimer"
-      >
-        {{ isRunning ? 'Pause' : 'Start' }}
-      </button>
-      <button
-        type="button"
-        class="px-5 py-2 rounded-xl text-sm font-medium border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-        style="min-height: 44px;"
-        @click="resetTimer"
-      >
-        Reset
-      </button>
-      <button
-        type="button"
-        class="px-3 py-2 rounded-xl text-sm border transition-colors"
-        :class="showSettings
-          ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400'
-          : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
-        style="min-height: 44px;"
-        aria-label="Timer settings"
-        @click="showSettings = !showSettings"
-      >
-        ⚙︎
-      </button>
-    </div>
-
-    <Transition name="expand">
-      <div v-if="showSettings" class="w-full flex flex-col gap-3 pt-1">
-        <div class="grid grid-cols-2 gap-3">
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-neutral-500 dark:text-neutral-400 text-center">Focus (min)</label>
-            <input
-              v-model.number="draftWork"
-              type="number"
-              min="1"
-              max="120"
-              class="w-full rounded-xl border px-3 py-2 text-sm text-center bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-purple-400"
-            />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-neutral-500 dark:text-neutral-400 text-center">Break (min)</label>
-            <input
-              v-model.number="draftBreak"
-              type="number"
-              min="1"
-              max="60"
-              class="w-full rounded-xl border px-3 py-2 text-sm text-center bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-purple-400"
-            />
-          </div>
+    <!-- Re-entry screen shown after break ends -->
+    <template v-if="waitingForReentry">
+      <div class="flex flex-col items-center gap-4 py-2 text-center">
+        <div
+          class="flex flex-col items-center justify-center rounded-full bg-green-50 dark:bg-green-950"
+          style="width: 160px; height: 160px;"
+        >
+          <span class="text-3xl">🌿</span>
+          <span class="text-xs font-medium text-green-500 dark:text-green-400 mt-2">Break done</span>
         </div>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">Ready to come back?</p>
         <button
           type="button"
-          class="w-full py-2 rounded-xl text-sm font-medium bg-purple-500 text-white hover:bg-purple-600 active:opacity-80 transition-colors"
+          class="px-5 py-2 rounded-xl text-sm font-medium bg-purple-500 hover:bg-purple-600 text-white transition-colors"
           style="min-height: 44px;"
-          @click="saveDurations"
+          @click="startNextSession"
         >
-          Save
+          Start next session
         </button>
       </div>
-    </Transition>
+    </template>
+
+    <!-- Normal timer -->
+    <template v-else>
+      <div
+        class="flex flex-col items-center justify-center rounded-full transition-colors duration-500"
+        :class="phase === 'work'
+          ? 'bg-purple-50 dark:bg-purple-950'
+          : 'bg-green-50 dark:bg-green-950'"
+        style="width: 160px; height: 160px;"
+      >
+        <span
+          class="text-4xl font-semibold tabular-nums transition-colors duration-500"
+          :class="phase === 'work'
+            ? 'text-purple-600 dark:text-purple-300'
+            : 'text-green-600 dark:text-green-300'"
+        >
+          {{ formattedTime }}
+        </span>
+        <span
+          class="text-xs font-medium mt-1 transition-colors duration-500"
+          :class="phase === 'work'
+            ? 'text-purple-400 dark:text-purple-500'
+            : 'text-green-400 dark:text-green-500'"
+        >
+          {{ phase === 'work' ? 'Focus' : 'Break' }}
+        </span>
+      </div>
+
+      <!-- Break activity suggestion -->
+      <p
+        v-if="phase === 'break' && breakActivity"
+        class="text-sm text-green-600 dark:text-green-400 text-center px-4"
+      >
+        {{ breakActivity }}
+      </p>
+
+      <div class="flex gap-3">
+        <button
+          type="button"
+          class="px-5 py-2 rounded-xl text-sm font-medium transition-colors"
+          :class="phase === 'work'
+            ? 'bg-purple-500 hover:bg-purple-600 text-white'
+            : 'bg-green-500 hover:bg-green-600 text-white'"
+          style="min-height: 44px; min-width: 88px;"
+          @click="toggleTimer"
+        >
+          {{ isRunning ? 'Pause' : 'Start' }}
+        </button>
+        <button
+          type="button"
+          class="px-5 py-2 rounded-xl text-sm font-medium border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          style="min-height: 44px;"
+          @click="resetTimer"
+        >
+          Reset
+        </button>
+        <button
+          type="button"
+          class="px-3 py-2 rounded-xl text-sm border transition-colors"
+          :class="showSettings
+            ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400'
+            : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
+          style="min-height: 44px;"
+          aria-label="Timer settings"
+          @click="showSettings = !showSettings"
+        >
+          ⚙︎
+        </button>
+      </div>
+
+      <Transition name="expand">
+        <div v-if="showSettings" class="w-full flex flex-col gap-3 pt-1">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-neutral-500 dark:text-neutral-400 text-center">Focus (min)</label>
+              <input
+                v-model.number="draftWork"
+                type="number"
+                min="1"
+                max="120"
+                class="w-full rounded-xl border px-3 py-2 text-sm text-center bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-purple-400"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-neutral-500 dark:text-neutral-400 text-center">Break (min)</label>
+              <input
+                v-model.number="draftBreak"
+                type="number"
+                min="1"
+                max="60"
+                class="w-full rounded-xl border px-3 py-2 text-sm text-center bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-purple-400"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            class="w-full py-2 rounded-xl text-sm font-medium bg-purple-500 text-white hover:bg-purple-600 active:opacity-80 transition-colors"
+            style="min-height: 44px;"
+            @click="saveDurations"
+          >
+            Save
+          </button>
+        </div>
+      </Transition>
+    </template>
+
   </div>
 </template>
 
 <script setup lang="ts">
 const DEFAULT_WORK = 25
 const DEFAULT_BREAK = 5
+
+const BREAK_ACTIVITIES = [
+  'Step away from the screen',
+  'Get some water',
+  'Stretch for 2 minutes',
+  'Take 5 deep breaths',
+  'Look at something in the distance for 20 seconds',
+  'Walk around for a few minutes',
+  'Close your eyes and breathe slowly',
+]
 
 function loadWorkMinutes(): number {
   const v = localStorage.getItem('pomodoro_work_minutes')
@@ -119,6 +164,8 @@ const breakSeconds = computed(() => breakMinutes.value * 60)
 const phase = ref<'work' | 'break'>('work')
 const remaining = ref(workSeconds.value)
 const isRunning = ref(false)
+const breakActivity = ref('')
+const waitingForReentry = ref(false)
 let interval: ReturnType<typeof setInterval> | null = null
 
 // Settings UI
@@ -133,7 +180,6 @@ function saveDurations() {
   breakMinutes.value = newBreak
   localStorage.setItem('pomodoro_work_minutes', String(newWork))
   localStorage.setItem('pomodoro_break_minutes', String(newBreak))
-  // Reset timer to new duration if not running
   if (!isRunning.value) {
     phase.value = 'work'
     remaining.value = workSeconds.value
@@ -167,10 +213,23 @@ function playChime() {
 }
 
 function transitionPhase() {
-  phase.value = phase.value === 'work' ? 'break' : 'work'
-  remaining.value = phase.value === 'work' ? workSeconds.value : breakSeconds.value
   playChime()
-  saveState()
+  if (phase.value === 'work') {
+    // Work ended → auto-start break with a suggested activity
+    phase.value = 'break'
+    remaining.value = breakSeconds.value
+    breakActivity.value = BREAK_ACTIVITIES[Math.floor(Math.random() * BREAK_ACTIVITIES.length)] ?? BREAK_ACTIVITIES[0]
+    saveState()
+    // Keep timer running through the break
+  } else {
+    // Break ended → stop and wait for re-entry confirmation
+    isRunning.value = false
+    if (interval) clearInterval(interval)
+    waitingForReentry.value = true
+    phase.value = 'work'
+    remaining.value = workSeconds.value
+    saveState()
+  }
 }
 
 function tick() {
@@ -204,10 +263,18 @@ function pauseTimer() {
 
 function resetTimer() {
   isRunning.value = false
+  waitingForReentry.value = false
+  breakActivity.value = ''
   if (interval) clearInterval(interval)
   phase.value = 'work'
   remaining.value = workSeconds.value
   saveState()
+}
+
+function startNextSession() {
+  waitingForReentry.value = false
+  breakActivity.value = ''
+  startTimer()
 }
 
 function saveState() {

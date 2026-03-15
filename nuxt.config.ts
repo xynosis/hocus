@@ -10,6 +10,10 @@ export default defineNuxtConfig({
     '@nuxtjs/supabase',
   ],
 
+  tailwindcss: {
+    cssPath: '~/assets/css/main.css',
+  },
+
   components: [
     { path: '~/components', pathPrefix: false },
   ],
@@ -21,7 +25,7 @@ export default defineNuxtConfig({
       head: {
         title: 'Hocus',
         link: [
-          { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
+          { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         ]
       }
     },

@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 z-50 bg-white dark:bg-neutral-950 overflow-y-auto">
+  <div class="fixed inset-0 z-50 bg-stone-50 dark:bg-neutral-950 overflow-y-auto">
     <div class="max-w-lg mx-auto px-4 py-8 flex flex-col gap-6 min-h-screen">
 
       <div class="flex items-center justify-between">
@@ -11,22 +11,36 @@
         >
           Focus
         </span>
-        <button
-          type="button"
-          class="text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-          style="min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: flex-end;"
-          @click="onExitClick"
-        >
-          Exit
-        </button>
+        <div class="flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="Capture a thought"
+            class="text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors flex items-center gap-1.5"
+            style="min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: center;"
+            @click="openParkIt"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+            style="min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: flex-end;"
+            @click="onExitClick"
+          >
+            Exit
+          </button>
+        </div>
       </div>
 
       <div v-if="task" class="flex flex-col gap-2">
-        <h1 class="text-2xl font-semibold leading-snug text-neutral-800 dark:text-neutral-100">
+        <h1 class="text-4xl font-semibold leading-snug text-neutral-800 dark:text-neutral-100">
           {{ task.title }}
         </h1>
-        <p v-if="task.estimated_minutes" class="text-sm text-neutral-400 dark:text-neutral-500">
-          ~{{ task.estimated_minutes }} min
+        <p class="text-sm text-neutral-400 dark:text-neutral-500">
+          <span v-if="task.estimated_minutes">~{{ task.estimated_minutes }} min estimated · </span>
+          <span>{{ elapsedDisplay }}</span>
         </p>
         <p
           v-if="task.notes"
@@ -35,6 +49,29 @@
           {{ task.notes }}
         </p>
       </div>
+
+      <!-- 90-minute hyperfocus nudge -->
+      <Transition name="fade">
+        <div
+          v-if="showHyperfocusNudge"
+          class="rounded-2xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4 flex flex-col gap-2"
+        >
+          <p class="text-sm font-medium text-amber-800 dark:text-amber-200">90 minutes in</p>
+          <p class="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+            Your brain works better with rest. Even a short break now will help.
+          </p>
+          <div class="flex gap-2 mt-1">
+            <button
+              type="button"
+              class="text-sm text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors"
+              style="min-height: 44px;"
+              @click="hyperfocusNudgeDismissed = true"
+            >
+              Keep going
+            </button>
+          </div>
+        </div>
+      </Transition>
 
       <div v-if="children.length > 0" class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
@@ -168,12 +205,46 @@ const props = defineProps<{
 }>()
 
 const { exitFocus } = useFocus()
+const { openParkIt } = useParkIt()
 const tasksStore = useTasksStore()
+const taskNotesStore = useTaskNotesStore()
 const { active: ambientActive, volume: ambientVolume, select: ambientSelect, setVolume: ambientSetVolume, stop: ambientStop } = useAmbientSound()
 
 const task = computed(() => tasksStore.getTaskById(props.taskId))
 const children = computed(() => tasksStore.getChildTasks(props.taskId))
 const completeCount = computed(() => children.value.filter(t => t.status === 'done').length)
+
+// Elapsed time
+const sessionStart = ref(Date.now())
+const elapsedSeconds = ref(0)
+const completedAtStart = ref(0)
+let elapsedTimer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  sessionStart.value = Date.now()
+  completedAtStart.value = completeCount.value
+  elapsedTimer = setInterval(() => {
+    elapsedSeconds.value = Math.floor((Date.now() - sessionStart.value) / 1000)
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (elapsedTimer) clearInterval(elapsedTimer)
+})
+
+const hyperfocusNudgeDismissed = ref(false)
+const showHyperfocusNudge = computed(() =>
+  !hyperfocusNudgeDismissed.value && elapsedSeconds.value >= 90 * 60
+)
+
+const elapsedDisplay = computed(() => {
+  const mins = Math.floor(elapsedSeconds.value / 60)
+  if (mins === 0) return 'Just started'
+  if (mins < 60) return `${mins} min in`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m > 0 ? `${h}h ${m}m in` : `${h}h in`
+})
 
 const isComplete = computed(() => {
   if (children.value.length > 0) {
@@ -203,7 +274,20 @@ function fireConfetti() {
   })
 }
 
-const taskNotesStore = useTaskNotesStore()
+async function saveSessionNote() {
+  const mins = Math.floor(elapsedSeconds.value / 60)
+  if (mins < 1) return
+  const completedThisSession = completeCount.value - completedAtStart.value
+  const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  const parts = [`Focus session · ${mins} min`]
+  if (completedThisSession > 0) {
+    parts.push(`${completedThisSession} step${completedThisSession !== 1 ? 's' : ''} completed`)
+  }
+  parts.push(`${date} at ${time}`)
+  await taskNotesStore.addNote(props.taskId, parts.join(' · '))
+}
+
 const showNotePrompt = ref(false)
 const exitNoteBody = ref('')
 const noteInput = ref<HTMLTextAreaElement | null>(null)
@@ -220,18 +304,28 @@ function onExitClick() {
 async function saveNoteAndExit() {
   const body = exitNoteBody.value.trim()
   if (body) await taskNotesStore.addNote(props.taskId, body)
-  onExit()
+  await onExit()
 }
 
-function onExit() {
+async function onExit() {
   showNotePrompt.value = false
   exitNoteBody.value = ''
+  await saveSessionNote()
   ambientStop()
   exitFocus()
 }
 </script>
 
 <style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 .celebrate-enter-active,
 .celebrate-leave-active {
   transition: opacity 0.4s ease;

@@ -10,7 +10,11 @@ export default {
   ],
   darkMode: 'media',
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        display: ['DM Sans', 'system-ui', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 } satisfies Config

@@ -2,7 +2,7 @@
   <div class="p-4 flex flex-col gap-4">
     <div class="flex items-center justify-between px-2 py-3">
       <div class="flex items-center gap-3">
-        <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Next 7 days</h1>
+        <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Next 7 days</h1>
         <NuxtLink to="/calendar"
           class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors flex items-center gap-1">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none">

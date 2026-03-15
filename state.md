@@ -71,7 +71,7 @@ Three-tool suite for ADHD-friendly deep work:
 | Project sections | project_sections table — name, sort_order | Sections group tasks within project detail; inline rename |
 | Section per-add | "+ Add task" per section sets section_id on creation | section_id injected in onTaskSubmit, not via prop |
 | Section reordering | VueDraggable on sections in project detail, sort_order persisted to Supabase | `reorderSections` in projects store; drag handle on section header |
-| End-of-day sweep | Full-screen overlay, 4-step guided flow | Same overlay pattern as WeeklyReview; amber colour scheme; button on Today view |
+| End-of-day sweep | Full-screen overlay, 5-step guided flow | amber colour scheme; step 3 "Pick up tomorrow" uses scoring (due soon + orbit + interest); confirmed picks batch-update working_on_date = tomorrow |
 | Breakdown | Inline on task detail | Prompts + templates |
 | Back navigation | `router.back()` with `/projects` fallback | |
 | Projects | Name, description, due date, color | Many-to-many via task_projects |

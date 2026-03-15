@@ -8,6 +8,7 @@
         : 'text-neutral-400 dark:text-neutral-500'"
       style="min-width: 64px; min-height: 44px;"
     >
+      <span class="block h-0.5 w-6 rounded-full transition-colors mb-0.5" :class="route.path === '/' ? 'bg-purple-500 dark:bg-purple-400' : 'bg-transparent'" />
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <path d="M3 10L10 3L17 10V17H13V13H7V17H3V10Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
       </svg>
@@ -22,6 +23,7 @@
         : 'text-neutral-400 dark:text-neutral-500'"
       style="min-width: 64px; min-height: 44px;"
     >
+      <span class="block h-0.5 w-6 rounded-full transition-colors mb-0.5" :class="route.path.startsWith('/projects') ? 'bg-purple-500 dark:bg-purple-400' : 'bg-transparent'" />
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <rect x="2" y="5" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
         <path d="M2 9H18" stroke="currentColor" stroke-width="1.5"/>
@@ -38,6 +40,7 @@
         : 'text-neutral-400 dark:text-neutral-500'"
       style="min-width: 64px; min-height: 44px;"
     >
+      <span class="block h-0.5 w-6 rounded-full transition-colors mb-0.5" :class="route.path === '/inbox' ? 'bg-purple-500 dark:bg-purple-400' : 'bg-transparent'" />
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <path d="M2 12H6L8 15H12L14 12H18" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
         <path d="M2 12V16C2 16.6 2.4 17 3 17H17C17.6 17 18 16.6 18 16V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -54,6 +57,7 @@
         : 'text-neutral-400 dark:text-neutral-500'"
       style="min-width: 64px; min-height: 44px;"
     >
+      <span class="block h-0.5 w-6 rounded-full transition-colors mb-0.5" :class="route.path === '/account' ? 'bg-purple-500 dark:bg-purple-400' : 'bg-transparent'" />
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
         <path d="M3 17C3 14 6 12 10 12C14 12 17 14 17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>

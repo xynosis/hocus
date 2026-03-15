@@ -131,8 +131,64 @@
         </div>
       </template>
 
-      <!-- Step 2: What can you drop? -->
+      <!-- Step 2: Pick up tomorrow -->
       <template v-if="step === 2">
+        <div class="flex flex-col gap-2">
+          <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Pick up tomorrow?</h1>
+          <p class="text-sm text-neutral-400 dark:text-neutral-500">
+            Anything from your backlog worth pulling into tomorrow? Tap to claim it.
+          </p>
+        </div>
+
+        <div v-if="pickUpCandidates.length === 0" class="py-8 text-center">
+          <p class="text-neutral-500 dark:text-neutral-400 text-sm">Nothing obvious to suggest.</p>
+        </div>
+
+        <div v-else class="flex flex-col gap-2">
+          <button
+            v-for="task in pickUpCandidates"
+            :key="task.id"
+            type="button"
+            class="flex items-center gap-3 px-4 py-3 rounded-2xl border text-left transition-colors"
+            :class="pickedForTomorrow.has(task.id)
+              ? 'bg-amber-50 dark:bg-amber-950 border-amber-300 dark:border-amber-700'
+              : 'bg-white dark:bg-neutral-900 border-neutral-100 dark:border-neutral-800 hover:border-neutral-200 dark:hover:border-neutral-700'"
+            @click="togglePickUp(task.id)"
+          >
+            <span
+              class="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+              :class="pickedForTomorrow.has(task.id)
+                ? 'bg-amber-500 border-amber-500'
+                : 'border-neutral-300 dark:border-neutral-600'"
+            >
+              <svg v-if="pickedForTomorrow.has(task.id)" width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-neutral-800 dark:text-neutral-100 leading-snug truncate">{{ task.title }}</p>
+              <p v-if="task.due_date" class="text-xs mt-0.5" :class="isDueSoon(task.due_date) ? 'text-red-400 dark:text-red-500' : 'text-neutral-400 dark:text-neutral-500'">
+                Due {{ formatDueDate(task.due_date) }}
+              </p>
+            </div>
+            <span
+              v-if="task.status === 'orbit'"
+              class="flex-shrink-0 text-xs px-1.5 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400">
+              orbit
+            </span>
+          </button>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="button" class="flex-1 py-3 rounded-xl text-sm border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" style="min-height: 44px;" @click="step--">Back</button>
+          <button type="button" class="flex-1 py-3 rounded-xl text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 transition-colors" style="min-height: 44px;" @click="confirmPickUps">
+            {{ pickedForTomorrow.size > 0 ? `Add ${pickedForTomorrow.size} to tomorrow` : 'Skip' }}
+          </button>
+        </div>
+      </template>
+
+      <!-- Step 3: What can you drop? -->
+      <template v-if="step === 3">
         <div class="flex flex-col gap-2">
           <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Anything to drop?</h1>
           <p class="text-sm text-neutral-400 dark:text-neutral-500">
@@ -194,8 +250,8 @@
         </div>
       </template>
 
-      <!-- Step 3: Done -->
-      <template v-if="step === 3">
+      <!-- Step 4: Done -->
+      <template v-if="step === 4">
         <div class="flex flex-col items-center justify-center py-16 gap-6 text-center">
           <p class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Day closed.</p>
           <p class="text-sm text-neutral-400 dark:text-neutral-500 leading-relaxed max-w-xs">
@@ -220,9 +276,10 @@
 import { useTasksStore } from '~/stores/tasks'
 import { isToday, isOverdue } from '~/utils/dates'
 
-const STEPS = [1, 2, 3, 4]
+const STEPS = [1, 2, 3, 4, 5]
 const step = ref(0)
 const dismissed = reactive(new Set<string>())
+const pickedForTomorrow = reactive(new Set<string>())
 
 const tasksStore = useTasksStore()
 const { closeSweep } = useEndOfDaySweep()
@@ -237,6 +294,16 @@ function formatTime(iso: string): string {
 
 function staleDays(date: string): number {
   return Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24))
+}
+
+function isDueSoon(date: string): boolean {
+  const days = (new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  return days <= 3
+}
+
+function formatDueDate(date: string): string {
+  const d = new Date(date + 'T12:00:00')
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
 // Step 0: finished today
@@ -273,7 +340,50 @@ async function moveToNextWeek(id: string) {
   dismissed.add(id)
 }
 
-// Step 2: lingering overdue tasks (working_on_date < today)
+// Step 2: candidates to pick up tomorrow
+function candidateScore(task: typeof tasksStore.tasks[number]): number {
+  let score = 0
+  const daysUntilDue = task.due_date
+    ? (new Date(task.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    : Infinity
+  if (daysUntilDue <= 1) score += 100
+  else if (daysUntilDue <= 3) score += 50
+  else if (daysUntilDue <= 7) score += 20
+  if (task.status === 'orbit') score += 30
+  if (task.interest === 'want_to') score += 10
+  if (task.energy === 'easy') score += 5
+  return score
+}
+
+const pickUpCandidates = computed(() =>
+  tasksStore.tasks
+    .filter(t => {
+      if (dismissed.has(t.id)) return false
+      if (t.status === 'done') return false
+      if (t.parent_id !== null) return false
+      // Exclude tasks already on today (handled in step 1) or already on tomorrow
+      if (t.working_on_date === today || t.working_on_date === tomorrow) return false
+      return true
+    })
+    .sort((a, b) => candidateScore(b) - candidateScore(a))
+    .slice(0, 10)
+)
+
+function togglePickUp(id: string) {
+  if (pickedForTomorrow.has(id)) pickedForTomorrow.delete(id)
+  else pickedForTomorrow.add(id)
+}
+
+async function confirmPickUps() {
+  if (pickedForTomorrow.size > 0) {
+    await Promise.all(
+      [...pickedForTomorrow].map(id => tasksStore.updateTask(id, { working_on_date: tomorrow }))
+    )
+  }
+  step.value++
+}
+
+// Step 3: lingering overdue tasks (working_on_date < today)
 const lingeringTasks = computed(() =>
   tasksStore.tasks.filter(t => {
     if (dismissed.has(t.id)) return false
@@ -297,7 +407,7 @@ async function parkTask(id: string) {
   dismissed.add(id)
 }
 
-// Step 3: closing message
+// Step 4: closing message
 const closingMessage = computed(() => {
   const done = finishedToday.value.length
   if (done === 0) return 'Rest up. Tomorrow you start fresh.'
@@ -306,6 +416,9 @@ const closingMessage = computed(() => {
 })
 
 watch(step, (s) => {
-  if (s === 0) dismissed.clear()
+  if (s === 0) {
+    dismissed.clear()
+    pickedForTomorrow.clear()
+  }
 })
 </script>

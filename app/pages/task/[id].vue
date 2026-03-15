@@ -25,7 +25,7 @@
             : (colorHex ?? 'transparent'),
         }">
         <div class="flex items-start justify-between gap-3 mb-3">
-          <h1 class="text-xl font-semibold leading-snug" :class="task.status === 'done'
+          <h1 class="text-2xl font-semibold leading-snug" :class="task.status === 'done'
             ? 'line-through text-green-700 dark:text-green-400'
             : 'text-neutral-800 dark:text-neutral-100'">
             {{ task.title }}

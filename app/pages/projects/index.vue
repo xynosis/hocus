@@ -1,7 +1,7 @@
 <template>
     <div class="p-4">
         <div class="flex items-center justify-between px-2 py-3">
-            <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Projects</h1>
+            <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Projects</h1>
 
             <button type="button"
                 class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-sm font-medium hover:bg-purple-200 dark:hover:bg-purple-900 transition-colors"

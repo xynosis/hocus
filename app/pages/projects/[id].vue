@@ -23,7 +23,7 @@
                     borderLeftColor: getColorHex(project.color_tag) ?? 'transparent',
                 }">
                 <div class="flex items-start justify-between gap-3 mb-2">
-                    <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">
+                    <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">
                         {{ project.name }}
                     </h1>
                     <button type="button" class="text-sm text-purple-500 dark:text-purple-400 flex-shrink-0"

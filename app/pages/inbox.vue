@@ -1,7 +1,7 @@
 <template>
     <div class="p-4">
         <div class="flex items-center justify-between px-2 py-3">
-          <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Inbox</h1>
+          <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Inbox</h1>
           <SearchBar v-model="search" />
           <button
             type="button"

@@ -356,7 +356,12 @@
 - **REQ-ADHD-01** **Backlog Triage** — full-screen overlay for reviewing unscheduled tasks. Actions: schedule, or drop.
 - **REQ-ADHD-02** **Avoidance Detector** — surfaces tasks with a working_on_date 3+ days overdue. Actions: Move to today, Not now (session dismiss), Drop it. Sorted most stale first.
 - **REQ-ADHD-03** Avoidance entry point shows task count. Only visible when stale tasks exist.
-- **REQ-ADHD-04** **End-of-day sweep** — guided wind-down routine triggered from Today view. 4 steps: What did you finish? (completed today) / What moves to tomorrow? (today's unfinished, actions: Tomorrow / Next week / Keep today) / What can you drop? (lingering overdue, actions: Drop it / Park it / Keep it) / Done (closing message).
+- **REQ-ADHD-04** **End-of-day sweep** — guided wind-down routine triggered from Today view. 5 steps:
+  1. **What did you finish?** — tasks completed today (read-only)
+  2. **Move to tomorrow?** — today's unfinished tasks (Tomorrow / Next week / Keep today)
+  3. **Pick up tomorrow?** — up to 10 candidates from backlog/unscheduled, scored by urgency (due soon), orbit status, and interest. Tap to toggle. Confirmed picks get `working_on_date = tomorrow`.
+  4. **Anything to drop?** — lingering overdue tasks (Drop it / Park it / Keep it)
+  5. **Done** — closing message
 
 ---
 

@@ -45,11 +45,6 @@
                 All projects
             </button>
 
-            <div class="px-3 pt-3 pb-1">
-                <span
-                    class="text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">Other</span>
-            </div>
-
             <NuxtLink to="/week" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
                 :class="route.path === '/week'
                     ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'

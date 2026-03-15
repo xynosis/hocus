@@ -3,7 +3,10 @@
     <!-- Normal Today header -->
     <div v-if="!startHereActive" class="flex items-center justify-between px-2 py-3">
       <div class="flex items-center gap-3">
-        <h1 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Today</h1>
+        <div>
+          <h1 class="text-3xl font-semibold text-neutral-800 dark:text-neutral-100">Today</h1>
+          <p class="text-sm text-neutral-400 dark:text-neutral-500 leading-tight">{{ todayLabel }}</p>
+        </div>
         <NuxtLink to="/week"
           class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors flex items-center gap-1">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
@@ -65,9 +68,9 @@
       <ErrorMessage v-if="tasksStore.error" :message="tasksStore.error" :on-retry="() => tasksStore.fetchTasks()" />
       <VueDraggable v-else v-model="todayTasksOrdered" class="flex flex-col gap-3" handle=".drag-handle"
         :animation="150" @end="onDragEnd">
-        <div v-for="task in todayTasksOrdered" :key="task.id" class="flex items-stretch gap-1.5">
+        <div v-for="task in todayTasksOrdered" :key="task.id" class="group flex items-stretch gap-1.5">
           <button
-            class="drag-handle flex items-center justify-center text-neutral-300 dark:text-neutral-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 rounded-xl"
+            class="drag-handle flex items-center justify-center text-neutral-300 dark:text-neutral-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 rounded-xl opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"
             style="min-width: 24px; padding: 4px;" aria-label="Drag to reorder" @click.prevent>
             <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
               <circle cx="3" cy="2.5" r="1.2" fill="currentColor" />
@@ -141,28 +144,26 @@
     </template>
 
     <!-- Weekly review + backlog triage + avoidance entry -->
-    <div v-if="!startHereActive && !searchTerm" class="px-2 flex gap-2 flex-wrap">
+    <div v-if="!startHereActive && !searchTerm" class="px-2 pt-1 flex flex-wrap gap-x-5">
       <button type="button"
-        class="flex-1 py-2.5 rounded-xl text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        class="py-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
         style="min-height: 44px;" @click="openReview">
         Weekly review
       </button>
       <button type="button"
-        class="flex-1 py-2.5 rounded-xl text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        class="py-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
         style="min-height: 44px;" @click="openSweep">
         End of day
       </button>
-      <button type="button" class="flex-1 py-2.5 rounded-xl text-sm transition-colors border" :class="backlogCount > 0
-        ? 'text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:text-neutral-600 dark:hover:text-neutral-300'
-        : 'text-neutral-300 dark:text-neutral-600 border-neutral-100 dark:border-neutral-800'"
+      <button v-if="backlogCount > 0" type="button"
+        class="py-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
         style="min-height: 44px;" @click="openTriage">
-        Backlog{{ backlogCount > 0 ? ` (${backlogCount})` : '' }}
+        Backlog ({{ backlogCount }})
       </button>
-      <button type="button" class="flex-1 py-2.5 rounded-xl text-sm transition-colors border" :class="avoidanceCount > 0
-        ? 'text-amber-500 dark:text-amber-400 border-amber-200 dark:border-amber-900 hover:bg-amber-50 dark:hover:bg-amber-950'
-        : 'text-neutral-300 dark:text-neutral-600 border-neutral-100 dark:border-neutral-800'"
+      <button v-if="avoidanceCount > 0" type="button"
+        class="py-2 text-sm text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
         style="min-height: 44px;" @click="openAvoidance">
-        Avoiding{{ avoidanceCount > 0 ? ` (${avoidanceCount})` : '' }}
+        Avoiding ({{ avoidanceCount }})
       </button>
     </div>
 
@@ -204,6 +205,10 @@ import OrbitWarmingSheet from '~/components/task/OrbitWarmingSheet.vue'
 import DoorOpenerSheet from '~/components/task/DoorOpenerSheet.vue'
 import PushSheet from '~/components/task/PushSheet.vue'
 import { VueDraggable } from 'vue-draggable-plus'
+
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+)
 
 const tasksStore = useTasksStore()
 const { enterFocus } = useFocus()
