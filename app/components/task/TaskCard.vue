@@ -106,15 +106,22 @@
             <button
                 v-if="task.status !== 'done'"
                 type="button"
-                :aria-label="isDoorOpener ? 'What\'s the smallest possible first step?' : 'Reschedule'"
+                aria-label="More options"
                 class="flex-shrink-0 flex items-center justify-center rounded-xl text-neutral-300 dark:text-neutral-600 hover:text-neutral-400 dark:hover:text-neutral-500 transition-colors"
                 style="min-width: 32px; min-height: 32px; font-size: 18px; line-height: 1;"
-                @click.stop="isDoorOpener ? emit('doorOpener') : emit('push')"
+                @click.stop="showContextMenu = true"
             >
                 ···
             </button>
         </div>
     </div>
+
+    <TaskContextMenu
+        v-if="showContextMenu"
+        v-model="showContextMenu"
+        :task="task"
+        @door-opener="emit('doorOpener')"
+    />
 </template>
 
 <script setup lang="ts">
@@ -124,6 +131,7 @@ import { getColorHex } from '~/utils/colors'
 import { inferTaskSize } from '~/utils/taskSize'
 import { useDependenciesStore } from '~/stores/dependencies'
 import confetti from 'canvas-confetti'
+import TaskContextMenu from '~/components/task/TaskContextMenu.vue'
 
 const colorHex = computed(() => getColorHex(props.task.color_tag))
 const taskSize = computed(() => inferTaskSize(props.task.estimated_minutes))
@@ -150,17 +158,11 @@ const dependenciesStore = useDependenciesStore()
 const isBlocked = computed(() => dependenciesStore.isBlocked(props.task.id))
 const childCount = computed(() => tasksStore.getChildTasks(props.task.id).length)
 const childCompleteCount = computed(() => tasksStore.getChildTasks(props.task.id).filter(t => t.status === 'done').length)
-const isDoorOpener = computed(() => {
-    if (props.task.status !== 'todo') return false
-    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-    return new Date(props.task.updated_at) < threeDaysAgo
-})
 
 const emit = defineEmits<{
     click: []
     delete: []
     doorOpener: []
-    push: []
 }>()
 
 const tasksStore = useTasksStore()
@@ -187,6 +189,8 @@ function toggleDone() {
         })
     }
 }
+
+const showContextMenu = ref(false)
 
 const swipeX = ref(0)
 const swipeStartX = ref(0)

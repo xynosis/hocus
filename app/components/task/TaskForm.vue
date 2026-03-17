@@ -7,7 +7,7 @@
           class="relative bg-white dark:bg-neutral-900 rounded-t-2xl sm:rounded-2xl px-4 pt-3 pb-8 flex flex-col gap-3 w-full sm:max-w-md sm:mx-4"
           style="max-height: 90vh; overflow-y: auto;">
           <h2 class="text-base font-medium text-neutral-800 dark:text-neutral-100">
-            {{ isEditMode ? 'Edit task' : 'New task' }}
+            {{ isEditMode ? 'Edit task' : props.parentId ? 'New step' : 'New task' }}
           </h2>
 
           <div class="flex flex-col gap-1">
@@ -170,6 +170,7 @@ const props = defineProps<{
   modelValue: boolean
   task?: Task
   preselectedProjectId?: string
+  parentId?: string
 }>()
 
 const emit = defineEmits<{
@@ -275,6 +276,7 @@ function handleSubmit() {
     interest: form.interest,
     estimated_minutes: form.estimated_minutes || null,
     recurrence: form.recurrence,
+    ...(props.parentId ? { parent_id: props.parentId } : {}),
   }, selectedProjectIds.value)
   close()
 }

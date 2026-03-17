@@ -50,6 +50,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 const tasksStore = useTasksStore()
 const body = ref('')
 const inputRef = ref<HTMLTextAreaElement | null>(null)
+const isSubmitting = ref(false)
 
 const itemCount = computed(() =>
   body.value.split('\n').filter(l => l.trim()).length
@@ -67,9 +68,12 @@ function close() {
 }
 
 async function submit() {
+  if (isSubmitting.value) return
   const lines = body.value.split('\n').map(l => l.trim()).filter(Boolean)
   if (!lines.length) return
+  isSubmitting.value = true
   await Promise.all(lines.map(title => tasksStore.addTask({ title })))
+  isSubmitting.value = false
   close()
 }
 </script>

@@ -309,8 +309,23 @@ function formatDueDate(date: string): string {
 // Step 0: finished today
 const finishedToday = computed(() =>
   tasksStore.tasks
-    .filter(t => t.status === 'done' && t.completed_at && isToday(t.completed_at) && t.parent_id === null)
-    .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())
+    .filter(t => {
+      if (t.parent_id !== null) return false
+      if (t.status === 'done' && t.completed_at && isToday(t.completed_at)) return true
+      // Container tasks where all children are done and at least one was done today
+      const children = tasksStore.getChildTasks(t.id)
+      if (children.length > 0) {
+        const allDone = children.every(c => c.status === 'done')
+        const anyDoneToday = children.some(c => c.completed_at && isToday(c.completed_at))
+        return allDone && anyDoneToday
+      }
+      return false
+    })
+    .sort((a, b) => {
+      const aTime = a.completed_at ?? (tasksStore.getChildTasks(a.id).map(c => c.completed_at).filter(Boolean).sort().at(-1) ?? '')
+      const bTime = b.completed_at ?? (tasksStore.getChildTasks(b.id).map(c => c.completed_at).filter(Boolean).sort().at(-1) ?? '')
+      return new Date(bTime).getTime() - new Date(aTime).getTime()
+    })
 )
 
 const finishedHeading = computed(() => {

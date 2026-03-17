@@ -291,6 +291,7 @@ async function saveSessionNote() {
 const showNotePrompt = ref(false)
 const exitNoteBody = ref('')
 const noteInput = ref<HTMLTextAreaElement | null>(null)
+const isExiting = ref(false)
 
 function onExitClick() {
   if (isComplete.value) {
@@ -308,6 +309,8 @@ async function saveNoteAndExit() {
 }
 
 async function onExit() {
+  if (isExiting.value) return
+  isExiting.value = true
   showNotePrompt.value = false
   exitNoteBody.value = ''
   await saveSessionNote()

@@ -56,7 +56,7 @@
         </p>
 
         <TaskCard :task="startHereTask" @click="onTaskClick(startHereTask)" @delete="onDelete(startHereTask.id)"
-          @door-opener="onDoorOpener(startHereTask)" @push="onPush(startHereTask)" />
+          @door-opener="onDoorOpener(startHereTask)" />
       </div>
     </Transition>
 
@@ -66,11 +66,21 @@
         <SkeletonCard v-for="n in 3" :key="n" />
       </div>
       <ErrorMessage v-if="tasksStore.error" :message="tasksStore.error" :on-retry="() => tasksStore.fetchTasks()" />
-      <VueDraggable v-else v-model="todayTasksOrdered" class="flex flex-col gap-3" handle=".drag-handle"
+      <!-- Reorder mode banner -->
+      <Transition name="fade">
+        <div v-if="reorderMode" class="flex items-center justify-between px-2 py-2 mb-1 rounded-xl bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800">
+          <span class="text-sm text-purple-600 dark:text-purple-400">Drag to reorder</span>
+          <button type="button" class="text-sm font-medium text-purple-600 dark:text-purple-400" style="min-height: 36px; min-width: 44px;" @click="reorderMode = false">Done</button>
+        </div>
+      </Transition>
+
+      <VueDraggable v-model="todayTasksOrdered" class="flex flex-col gap-3" handle=".drag-handle"
         :animation="150" @end="onDragEnd">
-        <div v-for="task in todayTasksOrdered" :key="task.id" class="group flex items-stretch gap-1.5">
+        <div v-for="task in todayTasksOrdered" :key="task.id" class="group flex items-stretch gap-1.5"
+          @touchstart.passive="startLongPress" @touchend.passive="cancelLongPress" @touchmove.passive="cancelLongPress">
           <button
-            class="drag-handle flex items-center justify-center text-neutral-300 dark:text-neutral-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 rounded-xl opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"
+            class="drag-handle flex items-center justify-center text-neutral-300 dark:text-neutral-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 rounded-xl transition-opacity"
+            :class="reorderMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 active:opacity-100'"
             style="min-width: 24px; padding: 4px;" aria-label="Drag to reorder" @click.prevent>
             <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
               <circle cx="3" cy="2.5" r="1.2" fill="currentColor" />
@@ -82,8 +92,9 @@
             </svg>
           </button>
           <div class="flex-1 min-w-0">
-            <TaskCard :task="task" :search-term="searchTerm || undefined" @click="onTaskClick(task)"
-              @delete="onDelete(task.id)" @door-opener="onDoorOpener(task)" @push="onPush(task)" />
+            <TaskCard :task="task" :search-term="searchTerm || undefined"
+              @click="reorderMode ? undefined : onTaskClick(task)"
+              @delete="onDelete(task.id)" @door-opener="onDoorOpener(task)" />
           </div>
         </div>
       </VueDraggable>
@@ -171,14 +182,14 @@
     <div v-if="!searchTerm && !startHereActive && untouchedUpcoming.length > 0" class="mt-4 flex flex-col gap-2">
       <p class="px-2 text-sm text-neutral-400 dark:text-neutral-500">Coming up — worth a thought</p>
       <TaskCard v-for="task in untouchedUpcoming" :key="task.id" :task="task" @click="onTaskClick(task)"
-        @delete="onDelete(task.id)" @door-opener="onDoorOpener(task)" @push="onPush(task)" />
+        @delete="onDelete(task.id)" @door-opener="onDoorOpener(task)" />
     </div>
 
     <!-- Drifted tasks (orbit but no date — not in main today list) -->
     <div v-if="!searchTerm && !startHereActive && driftedTasks.length > 0" class="mt-4 flex flex-col gap-2">
       <p class="px-2 text-sm text-neutral-400 dark:text-neutral-500">Drifted — tap to pick back up</p>
       <TaskCard v-for="task in driftedTasks" :key="task.id" :task="task"
-        @delete="onDelete(task.id)" @push="onPush(task)" />
+        @delete="onDelete(task.id)" />
     </div>
 
     <BaseModal v-model="showDeleteModal" title="Delete task?" confirm-label="Delete" @confirm="confirmDelete">
@@ -191,7 +202,6 @@
 
     <DoorOpenerSheet v-if="doorOpenerTask" v-model="showDoorOpenerSheet" :task="doorOpenerTask" />
 
-    <PushSheet v-model="showPushSheet" :task="pushTask" />
   </div>
 </template>
 
@@ -206,7 +216,6 @@ import BaseModal from '~/components/ui/BaseModal.vue'
 import FilterSheet from '~/components/ui/FilterSheet.vue'
 import SearchBar from '~/components/ui/SearchBar.vue'
 import DoorOpenerSheet from '~/components/task/DoorOpenerSheet.vue'
-import PushSheet from '~/components/task/PushSheet.vue'
 import { VueDraggable } from 'vue-draggable-plus'
 
 const todayLabel = computed(() =>
@@ -237,6 +246,22 @@ const avoidanceCount = computed(() =>
 )
 
 const todayTasksOrdered = ref<Task[]>([])
+const reorderMode = ref(false)
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+
+function startLongPress() {
+  longPressTimer = setTimeout(() => {
+    reorderMode.value = true
+    if (navigator.vibrate) navigator.vibrate(50)
+  }, 500)
+}
+
+function cancelLongPress() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
+}
 
 function onDragEnd() {
   saveOrder(todayTasksOrdered.value.map(t => t.id))
@@ -359,14 +384,6 @@ function onDoorOpener(task: Task) {
   showDoorOpenerSheet.value = true
 }
 
-// Push sheet
-const showPushSheet = ref(false)
-const pushTask = ref<Task | null>(null)
-
-function onPush(task: Task) {
-  pushTask.value = task
-  showPushSheet.value = true
-}
 
 // Upcoming + untouched nudge
 const untouchedUpcoming = computed(() => {

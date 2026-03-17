@@ -1,5 +1,16 @@
 <template>
   <div class="min-h-screen bg-stone-50 dark:bg-neutral-950">
+    <Transition name="fade">
+      <div v-if="isOffline"
+        class="fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-2 px-4 py-2 bg-neutral-800 dark:bg-neutral-900 text-neutral-200 text-sm"
+        style="min-height: 40px;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="flex-shrink-0">
+          <path d="M7 1v6M7 10.5v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        You're offline — changes will sync when reconnected
+      </div>
+    </Transition>
     <AppSidebar
       class="hidden sm:flex"
       @open-task-sheet="isSheetOpen = true"
@@ -83,7 +94,7 @@ import EndOfDaySweep from '~/components/review/EndOfDaySweep.vue'
 import OrbitWarmingSheet from '~/components/task/OrbitWarmingSheet.vue'
 import { useTasksStore } from '~/stores/tasks'
 import { useProjectsStore } from '~/stores/projects'
-import type { CreateTaskPayload } from '~/stores/tasks'
+
 
 const { focusTaskId, pickUpTaskId, confirmPickUp, dismissPickUp, enterFocus } = useFocus()
 const { orbitTask, isOpen: orbitWarmingOpen, close: closeOrbitWarming } = useOrbitWarming()
@@ -108,11 +119,44 @@ const showPickUp = computed({
   set: (val) => { if (!val) dismissPickUp() },
 })
 
+const isOffline = ref(false)
+onMounted(() => {
+  isOffline.value = !navigator.onLine
+  window.addEventListener('online', () => { isOffline.value = false })
+  window.addEventListener('offline', () => { isOffline.value = true })
+})
+
 const isSheetOpen = ref(false)
 const tasksStore = useTasksStore()
 const projectsStore = useProjectsStore()
 
-async function onTaskSubmit(payload: CreateTaskPayload, projectIds: string[]) {
+function isTyping(): boolean {
+  const el = document.activeElement
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || (el as HTMLElement)?.isContentEditable
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeyDown)
+})
+
+function onKeyDown(e: KeyboardEvent) {
+  if (isTyping()) return
+  if (e.metaKey || e.ctrlKey || e.altKey) return
+  if (focusTaskId.value) return // ignore shortcuts while in Focus Mode
+  if (e.key === 'n' || e.key === 'N') {
+    e.preventDefault()
+    isSheetOpen.value = true
+  } else if (e.key === 'p' || e.key === 'P') {
+    e.preventDefault()
+    openParkIt()
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function onTaskSubmit(payload: any, projectIds: string[]) {
   const task = await tasksStore.addTask(payload)
   if (task && projectIds.length > 0) {
     await projectsStore.syncTaskProjects(task.id, projectIds)

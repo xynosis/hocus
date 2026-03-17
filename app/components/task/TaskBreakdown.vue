@@ -200,7 +200,17 @@
                 style="min-width: 44px; min-height: 44px;" @click="addChild">
                 <span class="text-white text-xl leading-none">+</span>
             </button>
+            <button type="button" aria-label="Add detailed step"
+                class="flex items-center justify-center rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                style="min-width: 44px; min-height: 44px;" @click="showAddStepForm = true">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/>
+                </svg>
+            </button>
         </div>
+
+        <TaskForm v-model="showAddStepForm" :parent-id="props.taskId" @submit="onAddStepSubmit" />
 
         <div class="flex gap-2">
             <button type="button" class="flex-1 py-2 px-3 rounded-xl text-sm border transition-colors"
@@ -225,9 +235,11 @@
 <script setup lang="ts">
 import ChildTaskItem from '~/components/task/ChildTaskItem.vue'
 import BaseModal from '~/components/ui/BaseModal.vue'
+import TaskForm from '~/components/task/TaskForm.vue'
 import { taskTemplates } from '~/utils/taskTemplates'
 import type { TaskTemplate } from '~/utils/taskTemplates'
 import type { UserPattern } from '~/types'
+import type { CreateTaskPayload, UpdateTaskPayload } from '~/stores/tasks'
 import { usePatternsStore } from '~/stores/patterns'
 
 const props = defineProps<{
@@ -250,6 +262,11 @@ const completeCount = computed(() =>
 )
 
 const newChildTitle = ref('')
+const showAddStepForm = ref(false)
+
+async function onAddStepSubmit(payload: CreateTaskPayload | UpdateTaskPayload) {
+    await tasksStore.addTask({ ...(payload as CreateTaskPayload), parent_id: props.taskId })
+}
 
 async function addChild() {
     const title = newChildTitle.value.trim()
@@ -356,10 +373,10 @@ function confirmApplyTemplate() {
     }
 }
 
-function applySteps(steps: string[]) {
-    steps.forEach(title => {
-        tasksStore.addTask({ title, parent_id: props.taskId })
-    })
+async function applySteps(steps: string[]) {
+    for (const title of steps) {
+        await tasksStore.addTask({ title, parent_id: props.taskId })
+    }
 }
 </script>
 

@@ -137,6 +137,54 @@
         </button>
       </div>
 
+      <!-- Parent task -->
+      <div class="border-t border-neutral-100 dark:border-neutral-800 pt-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between px-1">
+          <h2 class="text-base font-medium text-neutral-800 dark:text-neutral-100">Nested under</h2>
+          <button
+            type="button"
+            class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors"
+            style="min-height: 32px;"
+            @click="showParentSearch = !showParentSearch"
+          >{{ task.parent_id ? 'Change' : '+ Add' }}</button>
+        </div>
+
+        <div v-if="parentTask" class="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800">
+          <span class="flex-1 text-sm text-neutral-700 dark:text-neutral-300 truncate">{{ parentTask.title }}</span>
+          <button
+            type="button"
+            class="flex-shrink-0 text-neutral-300 dark:text-neutral-600 hover:text-red-400 dark:hover:text-red-500 transition-colors"
+            style="min-width: 32px; min-height: 32px; font-size: 16px;"
+            @click="tasksStore.updateTask(task.id, { parent_id: null })"
+          >×</button>
+        </div>
+
+        <div v-else-if="!showParentSearch" class="px-1">
+          <p class="text-sm text-neutral-400 dark:text-neutral-500">Not nested under any task.</p>
+        </div>
+
+        <Transition name="expand">
+          <div v-if="showParentSearch" class="flex flex-col gap-2">
+            <input
+              v-model="parentSearch"
+              type="text"
+              placeholder="Search tasks…"
+              class="w-full rounded-xl border px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+            <div v-if="parentResults.length > 0" class="flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+              <button
+                v-for="result in parentResults"
+                :key="result.id"
+                type="button"
+                class="text-left px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors border-b border-neutral-100 dark:border-neutral-800 last:border-0"
+                style="min-height: 44px;"
+                @click="setParent(result.id)"
+              >{{ result.title }}</button>
+            </div>
+          </div>
+        </Transition>
+      </div>
+
       <!-- Dependencies -->
       <div class="border-t border-neutral-100 dark:border-neutral-800 pt-4 flex flex-col gap-3">
         <div class="flex items-center justify-between px-1">
@@ -219,7 +267,7 @@
             v-model="newNote"
             placeholder="Add a note…"
             rows="2"
-            class="flex-1 rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
+            class="flex-1 rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y"
             @keydown.meta.enter="submitNote"
             @keydown.ctrl.enter="submitNote"
           />
@@ -350,6 +398,31 @@ function goBack() {
   }
 }
 
+// Parent task
+const showParentSearch = ref(false)
+const parentSearch = ref('')
+const parentTask = computed(() =>
+  task.value?.parent_id ? tasksStore.getTaskById(task.value.parent_id) : undefined
+)
+const parentResults = computed(() => {
+  const q = parentSearch.value.trim().toLowerCase()
+  if (!q || !task.value) return []
+  return tasksStore.tasks
+    .filter(t =>
+      t.id !== task.value!.id &&
+      t.parent_id === null &&
+      t.status !== 'done' &&
+      t.title.toLowerCase().includes(q)
+    )
+    .slice(0, 6)
+})
+async function setParent(parentId: string) {
+  if (!task.value) return
+  await tasksStore.updateTask(task.value.id, { parent_id: parentId })
+  parentSearch.value = ''
+  showParentSearch.value = false
+}
+
 // Dependencies
 const showBlockerSearch = ref(false)
 const blockerSearch = ref('')
@@ -387,12 +460,16 @@ async function addBlocker(dependsOnId: string) {
 const taskNotesStore = useTaskNotesStore()
 const taskNotes = computed(() => taskNotesStore.getNotesForTask(route.params.id as string))
 const newNote = ref('')
+const isSubmittingNote = ref(false)
 
 async function submitNote() {
+  if (isSubmittingNote.value) return
   const body = newNote.value.trim()
   if (!body) return
+  isSubmittingNote.value = true
   newNote.value = ''
   await taskNotesStore.addNote(route.params.id as string, body)
+  isSubmittingNote.value = false
 }
 
 function formatNoteDate(iso: string): string {
