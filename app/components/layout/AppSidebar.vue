@@ -1,159 +1,176 @@
 <template>
-    <aside
-        class="fixed left-0 top-0 bottom-0 w-56 bg-stone-50 dark:bg-neutral-900 border-r border-stone-200 dark:border-neutral-800 flex flex-col z-30">
-        <div class="px-4 py-5 border-b border-neutral-100 dark:border-neutral-800">
-            <h1 class="text-base font-semibold text-neutral-800 dark:text-neutral-100">Hocus</h1>
-        </div>
+  <!-- Mobile backdrop -->
+  <div
+    v-if="open"
+    class="sm:hidden fixed inset-0 bg-black/40 z-40"
+    @click="emit('close')"
+  />
 
-        <div class="flex-1 overflow-y-auto py-3 flex flex-col gap-1 px-2">
-            <NuxtLink to="/" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors" :class="route.path === '/'
-                ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                style="min-height: 44px;">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path d="M3 10L10 3L17 10V17H13V13H7V17H3V10Z" stroke="currentColor" stroke-width="1.5"
-                        stroke-linejoin="round" fill="none" />
-                </svg>
-                Today
-            </NuxtLink>
+  <aside
+    class="fixed left-0 top-0 bottom-0 w-64 sm:w-56 bg-stone-50 dark:bg-neutral-900 border-r border-stone-200 dark:border-neutral-800 flex flex-col z-50 transition-transform duration-200 ease-in-out shadow-xl sm:shadow-none"
+    :class="open ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'"
+  >
+    <div class="px-4 py-5 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+      <h1 class="text-base font-semibold text-neutral-800 dark:text-neutral-100">Hocus</h1>
+      <button
+        type="button"
+        class="sm:hidden flex items-center justify-center w-8 h-8 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors rounded-lg"
+        @click="emit('close')"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
 
-            <div class="px-3 pt-3 pb-1">
-                <span
-                    class="text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">Projects</span>
-            </div>
+    <div class="flex-1 overflow-y-auto py-3 flex flex-col gap-1 px-2">
+      <NuxtLink to="/" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors" :class="route.path === '/'
+          ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+          : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;" @click="emit('close')">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M3 10L10 3L17 10V17H13V13H7V17H3V10Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+        </svg>
+        Today
+      </NuxtLink>
 
-            <NuxtLink v-for="project in projects" :key="project.id" :to="`/projects/${project.id}`"
-                class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors truncate" :class="route.path === `/projects/${project.id}`
-                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                style="min-height: 44px;">
-                <span class="flex-shrink-0 w-2.5 h-2.5 rounded-full"
-                    :style="{ backgroundColor: getColorHex(project.color_tag) ?? '#d4d4d4' }" />
-                <span class="truncate">{{ project.name }}</span>
-            </NuxtLink>
+      <div class="px-3 pt-3 pb-1">
+        <span class="text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">Projects</span>
+      </div>
 
-            <button type="button"
-                class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors text-left w-full"
-                :class="route.path === '/projects'
-                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
-                    : 'text-neutral-400 dark:text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                style="min-height: 44px;" @click="navigateTo('/projects')">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" />
-                    <path d="M10 7V10M10 13H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                </svg>
-                All projects
-            </button>
+      <NuxtLink v-for="project in projects" :key="project.id" :to="`/projects/${project.id}`"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors truncate" :class="route.path === `/projects/${project.id}`
+            ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;" @click="emit('close')">
+        <span class="flex-shrink-0 w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: getColorHex(project.color_tag) ?? '#d4d4d4' }" />
+        <span class="truncate">{{ project.name }}</span>
+      </NuxtLink>
 
-            <NuxtLink to="/week" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
-                :class="route.path === '/week'
-                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                style="min-height: 44px;">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
-                    <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                </svg>
-                Next 7 days
-            </NuxtLink>
+      <button type="button"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors text-left w-full"
+        :class="route.path === '/projects'
+            ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+            : 'text-neutral-400 dark:text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;" @click="navigateTo('/projects'); emit('close')">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M10 7V10M10 13H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        All projects
+      </button>
 
-            <NuxtLink to="/calendar" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
-                :class="route.path === '/calendar'
-                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                style="min-height: 44px;">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="1" y="2" width="14" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
-                    <path d="M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                    <path d="M1 6h14" stroke="currentColor" stroke-width="1.4"/>
-                    <circle cx="5" cy="10" r="1" fill="currentColor"/>
-                    <circle cx="8" cy="10" r="1" fill="currentColor"/>
-                    <circle cx="11" cy="10" r="1" fill="currentColor"/>
-                </svg>
-                Calendar
-            </NuxtLink>
+      <NuxtLink to="/week" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+        :class="route.path === '/week'
+            ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;" @click="emit('close')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Next 7 days
+      </NuxtLink>
 
-            <NuxtLink to="/write" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
-                :class="route.path.startsWith('/write')
-                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                style="min-height: 44px;">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path d="M4 17h12M13 3l3 3-8 8H5v-3L13 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                </svg>
-                Write
-            </NuxtLink>
+      <NuxtLink to="/calendar" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+        :class="route.path === '/calendar'
+            ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;" @click="emit('close')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="2" width="14" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <path d="M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M1 6h14" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="5" cy="10" r="1" fill="currentColor"/>
+          <circle cx="8" cy="10" r="1" fill="currentColor"/>
+          <circle cx="11" cy="10" r="1" fill="currentColor"/>
+        </svg>
+        Calendar
+      </NuxtLink>
 
-            <NuxtLink to="/canvas" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
-                :class="route.path.startsWith('/canvas')
-                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                style="min-height: 44px;">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="1" y="1" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
-                    <rect x="9" y="1" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
-                    <rect x="1" y="10" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
-                    <rect x="9" y="10" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
-                </svg>
-                Canvas
-            </NuxtLink>
+      <NuxtLink to="/write" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+        :class="route.path.startsWith('/write')
+            ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;" @click="emit('close')">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M4 17h12M13 3l3 3-8 8H5v-3L13 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        Write
+      </NuxtLink>
 
-            <NuxtLink to="/inbox" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
-                :class="route.path === '/inbox'
-                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
-                style="min-height: 44px;">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path d="M2 12H6L8 15H12L14 12H18" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-                    <path d="M2 12V16C2 16.6 2.4 17 3 17H17C17.6 17 18 16.6 18 16V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M10 3V11M7 8L10 11L13 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Inbox
-            </NuxtLink>
+      <NuxtLink to="/canvas" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+        :class="route.path.startsWith('/canvas')
+            ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;" @click="emit('close')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="9" y="1" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="1" y="10" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="9" y="10" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+        Canvas
+      </NuxtLink>
 
-            <button
-                type="button"
-                class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors text-left w-full text-neutral-400 dark:text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                style="min-height: 44px;"
-                @click="openTriage"
-            >
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path d="M3 5H17M3 10H12M3 15H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                    <circle cx="15" cy="14" r="3" stroke="currentColor" stroke-width="1.5" fill="none" />
-                    <path d="M14 14L15 15L17 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                Backlog{{ backlogCount > 0 ? ` (${backlogCount})` : '' }}
-            </button>
-        </div>
+      <NuxtLink to="/inbox" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+        :class="route.path === '/inbox'
+            ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+        style="min-height: 44px;" @click="emit('close')">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M2 12H6L8 15H12L14 12H18" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M2 12V16C2 16.6 2.4 17 3 17H17C17.6 17 18 16.6 18 16V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M10 3V11M7 8L10 11L13 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Inbox
+      </NuxtLink>
 
-        <div class="px-2 py-3 border-t border-neutral-100 dark:border-neutral-800 flex flex-col gap-1">
-            <button type="button"
-                class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium bg-purple-500 hover:bg-purple-600 text-white transition-colors w-full"
-                style="min-height: 44px;" @click="emit('open-task-sheet')">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 3V13M3 8H13" stroke="white" stroke-width="2" stroke-linecap="round" />
-                </svg>
-                New task
-            </button>
+      <button type="button"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors text-left w-full text-neutral-400 dark:text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+        style="min-height: 44px;" @click="openTriage; emit('close')">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M3 5H17M3 10H12M3 15H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="15" cy="14" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M14 14L15 15L17 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Backlog{{ backlogCount > 0 ? ` (${backlogCount})` : '' }}
+      </button>
+    </div>
 
-            <button type="button"
-                class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-neutral-400 dark:text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors w-full"
-                style="min-height: 44px;" @click="navigateTo('/account')">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5" fill="none" />
-                    <path d="M3 17C3 14 6 12 10 12C14 12 17 14 17 17" stroke="currentColor" stroke-width="1.5"
-                        stroke-linecap="round" />
-                </svg>
-                Account
-            </button>
-        </div>
-    </aside>
+    <div class="px-2 py-3 border-t border-neutral-100 dark:border-neutral-800 flex flex-col gap-1">
+      <button type="button"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium bg-purple-500 hover:bg-purple-600 text-white transition-colors w-full"
+        style="min-height: 44px;" @click="emit('open-task-sheet'); emit('close')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 3V13M3 8H13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        New task
+      </button>
+
+      <button type="button"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-neutral-400 dark:text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors w-full"
+        style="min-height: 44px;" @click="navigateTo('/account'); emit('close')">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M3 17C3 14 6 12 10 12C14 12 17 14 17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Account
+      </button>
+    </div>
+  </aside>
 </template>
 
 <script setup lang="ts">
 import { getColorHex } from '~/utils/colors'
 import { useProjectsStore } from '~/stores/projects'
 import { useTasksStore } from '~/stores/tasks'
+
+defineProps<{ open?: boolean }>()
+const emit = defineEmits<{
+  'open-task-sheet': []
+  'close': []
+}>()
 
 const route = useRoute()
 const projectsStore = useProjectsStore()
@@ -166,8 +183,4 @@ const backlogCount = computed(() =>
     t.status !== 'done' && t.parent_id === null && !t.working_on_date && !t.due_date
   ).length
 )
-
-const emit = defineEmits<{
-    'open-task-sheet': []
-}>()
 </script>

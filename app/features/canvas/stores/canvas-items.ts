@@ -3,11 +3,12 @@ import type { CanvasItem, NoteColor } from '~/types'
 
 export type AddItemPayload = {
   board_id: string
-  item_type: 'task' | 'document' | 'note'
+  item_type: 'task' | 'document' | 'note' | 'image'
   task_id?: string | null
   document_id?: string | null
   note_text?: string | null
   note_color?: NoteColor
+  image_url?: string | null
   x: number
   y: number
 }
@@ -63,6 +64,7 @@ export const useCanvasItemsStore = defineStore('canvasItems', () => {
         document_id: payload.document_id ?? null,
         note_text: payload.note_text ?? null,
         note_color: payload.note_color ?? 'yellow',
+        image_url: payload.image_url ?? null,
         x: payload.x,
         y: payload.y,
       })

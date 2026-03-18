@@ -74,13 +74,15 @@
         </div>
       </Transition>
 
-      <VueDraggable v-model="todayTasksOrdered" class="flex flex-col gap-3" handle=".drag-handle"
+      <VueDraggable v-model="todayTasksOrdered" class="flex flex-col gap-3"
+        :handle="reorderMode ? '.reorder-row' : '.drag-handle'"
         :animation="150" @end="onDragEnd">
         <div v-for="task in todayTasksOrdered" :key="task.id" class="group flex items-stretch gap-1.5"
+          :class="{ 'reorder-row': reorderMode }"
           @touchstart.passive="startLongPress" @touchend.passive="cancelLongPress" @touchmove.passive="cancelLongPress">
           <button
-            class="drag-handle flex items-center justify-center text-neutral-300 dark:text-neutral-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 rounded-xl transition-opacity"
-            :class="reorderMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 active:opacity-100'"
+            class="drag-handle hidden md:flex items-center justify-center text-neutral-300 dark:text-neutral-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 rounded-xl transition-opacity"
+            :class="reorderMode ? 'md:opacity-100' : 'md:opacity-0 md:group-hover:opacity-100 md:active:opacity-100'"
             style="min-width: 24px; padding: 4px;" aria-label="Drag to reorder" @click.prevent>
             <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
               <circle cx="3" cy="2.5" r="1.2" fill="currentColor" />

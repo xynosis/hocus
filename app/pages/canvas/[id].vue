@@ -75,7 +75,7 @@
         :task="item.task_id ? tasksStore.getTaskById(item.task_id) ?? undefined : undefined"
         :document="item.document_id ? documentsStore.getById(item.document_id) ?? undefined : undefined"
         :selected="selectedIds.has(item.id)"
-        :is-dragging="!!dragState && dragState.itemStartPositions.has(item.id)"
+        :is-dragging="isItemDragging(item.id)"
         @pointerdown="onCardPointerDown($event, item.id)"
         @select="onCardSelect($event, item.id)"
         @remove="canvasItemsStore.remove(item.id)"
@@ -173,7 +173,10 @@
             class="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors border-b border-neutral-50 dark:border-neutral-800/50"
             @click="addTask(task.id)"
           >
-            <span class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: taskStatusColor(task.status) }" />
+            <span
+              class="w-2.5 h-2.5 rounded-full flex-shrink-0 border"
+              :style="{ backgroundColor: taskProjectColor(task.id) ?? taskStatusColor(task.status), borderColor: taskProjectColor(task.id) ?? 'transparent' }"
+            />
             <span class="text-sm text-neutral-700 dark:text-neutral-300 truncate flex-1">{{ task.title }}</span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="text-neutral-300 dark:text-neutral-700 flex-shrink-0"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -221,9 +224,11 @@
 import { useBoardsStore } from '~/features/canvas/stores/boards'
 import { useCanvasItemsStore } from '~/features/canvas/stores/canvas-items'
 import { useTasksStore } from '~/stores/tasks'
+import { useProjectsStore } from '~/stores/projects'
 import { useDocumentsStore } from '~/features/write/stores/documents'
 import CanvasCard from '~/features/canvas/components/CanvasCard.vue'
 import type { NoteColor, TaskStatus } from '~/types'
+import { getColorHex } from '~/utils/colors'
 
 definePageMeta({ layout: 'canvas' })
 
@@ -233,7 +238,14 @@ const route = useRoute()
 const boardsStore = useBoardsStore()
 const canvasItemsStore = useCanvasItemsStore()
 const tasksStore = useTasksStore()
+const projectsStore = useProjectsStore()
 const documentsStore = useDocumentsStore()
+
+function taskProjectColor(taskId: string): string | null {
+  const ids = projectsStore.getProjectIdsForTask(taskId)
+  if (!ids.length) return null
+  return getColorHex(projectsStore.getProjectById(ids[0]!)?.color_tag ?? null)
+}
 
 const boardId = computed(() => route.params.id as string)
 const loaded = ref(false)
@@ -257,6 +269,7 @@ type DragState = {
   startPointerY: number
   itemStartPositions: Map<string, { x: number; y: number }>
   pointerId: number
+  active: boolean // true once movement threshold exceeded
 }
 let dragState: DragState | null = null
 
@@ -286,12 +299,21 @@ onMounted(async () => {
   if (board) boardTitle.value = board.title
   loaded.value = true
 
-  // Attach wheel listener with passive:false so we can preventDefault
   canvasRef.value?.addEventListener('wheel', onWheel, { passive: false })
+  canvasRef.value?.addEventListener('touchstart', onTouchStart, { passive: true })
+  canvasRef.value?.addEventListener('touchmove', onTouchMove, { passive: false })
+  canvasRef.value?.addEventListener('touchend', onTouchEnd, { passive: true })
+  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('paste', onPaste)
 })
 
 onUnmounted(() => {
   canvasRef.value?.removeEventListener('wheel', onWheel)
+  canvasRef.value?.removeEventListener('touchstart', onTouchStart)
+  canvasRef.value?.removeEventListener('touchmove', onTouchMove)
+  canvasRef.value?.removeEventListener('touchend', onTouchEnd)
+  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('paste', onPaste as EventListener)
 })
 
 // ── Wheel zoom ──────────────────────────────────────────────────────────────
@@ -324,6 +346,10 @@ function resetView() {
   zoom.value = 1
 }
 
+function isItemDragging(itemId: string): boolean {
+  return !!dragState && dragState.itemStartPositions.has(itemId)
+}
+
 // ── Pointer events on canvas background ──────────────────────────────────────
 function onCanvasPointerDown(e: PointerEvent) {
   if ((e.target as HTMLElement).closest('[data-card]')) return
@@ -340,6 +366,13 @@ function onCanvasPointerDown(e: PointerEvent) {
 
 function onCanvasPointerMove(e: PointerEvent) {
   if (dragState) {
+    if (!dragState.active) {
+      const ddx = e.clientX - dragState.startPointerX
+      const ddy = e.clientY - dragState.startPointerY
+      if (ddx * ddx + ddy * ddy < 9) return // < 3px — wait for intent
+      dragState.active = true
+      canvasRef.value?.setPointerCapture(dragState.pointerId)
+    }
     const dx = (e.clientX - dragState.startPointerX) / zoom.value
     const dy = (e.clientY - dragState.startPointerY) / zoom.value
     for (const [id, start] of dragState.itemStartPositions) {
@@ -386,9 +419,9 @@ function onCardPointerDown(e: PointerEvent, itemId: string) {
     startPointerY: e.clientY,
     itemStartPositions: startPositions,
     pointerId: e.pointerId,
+    active: false,
   }
-  // Capture on the canvas so we keep receiving move/up
-  canvasRef.value?.setPointerCapture(e.pointerId)
+  // Pointer capture is deferred until movement threshold in onCanvasPointerMove
 }
 
 function onCardSelect(e: MouseEvent, itemId: string) {
@@ -399,6 +432,69 @@ function onCardSelect(e: MouseEvent, itemId: string) {
     selectedIds.value = next
   } else {
     selectedIds.value = new Set([itemId])
+  }
+}
+
+// ── Pinch-to-zoom (touch) ────────────────────────────────────────────────────
+let lastPinchDist = 0
+
+function onTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) lastPinchDist = 0
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (e.touches.length !== 2) return
+  e.preventDefault()
+  const t1 = e.touches[0]!
+  const t2 = e.touches[1]!
+  const dx = t1.clientX - t2.clientX
+  const dy = t1.clientY - t2.clientY
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  if (lastPinchDist > 0) {
+    const cx = (t1.clientX + t2.clientX) / 2
+    const cy = (t1.clientY + t2.clientY) / 2
+    applyZoom(dist / lastPinchDist, cx, cy)
+  }
+  lastPinchDist = dist
+}
+
+function onTouchEnd(e: TouchEvent) {
+  if (e.touches.length < 2) lastPinchDist = 0
+}
+
+// ── Keyboard: backspace/delete selected items ─────────────────────────────────
+function onKeyDown(e: KeyboardEvent) {
+  const el = document.activeElement
+  const isEditing = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || (el as HTMLElement)?.isContentEditable
+  if (isEditing) return
+  if ((e.key === 'Backspace' || e.key === 'Delete') && selectedIds.value.size > 0) {
+    e.preventDefault()
+    for (const id of selectedIds.value) canvasItemsStore.remove(id)
+    selectedIds.value = new Set()
+  }
+}
+
+// ── Image paste ───────────────────────────────────────────────────────────────
+const supabase = useSupabaseClient()
+
+async function onPaste(e: Event) {
+  const clipItems = (e as ClipboardEvent).clipboardData?.items
+  if (!clipItems) return
+  for (const item of Array.from(clipItems) as DataTransferItem[]) {
+    if (!item.type.startsWith('image/')) continue
+    const blob = item.getAsFile()
+    if (!blob) continue
+    const authStore = useAuthStore()
+    const ext = item.type.split('/')[1] ?? 'png'
+    const path = `${authStore.user!.id}/${Date.now()}.${ext}`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).storage.from('canvas-images').upload(path, blob, { contentType: item.type })
+    if (error) { console.error('Image upload failed:', error.message); return }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: urlData } = (supabase as any).storage.from('canvas-images').getPublicUrl(data.path)
+    const pos = centerWorldPos()
+    await canvasItemsStore.add({ board_id: boardId.value, item_type: 'image', image_url: urlData.publicUrl, x: pos.x, y: pos.y })
+    break
   }
 }
 

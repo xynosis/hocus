@@ -11,16 +11,29 @@
         You're offline — changes will sync when reconnected
       </div>
     </Transition>
-    <AppSidebar
-      class="hidden sm:flex"
-      @open-task-sheet="isSheetOpen = true"
-    />
-
-    <div class="sm:pl-56 pb-24 sm:pb-8 min-h-screen">
-      <slot />
+    <!-- Mobile top bar -->
+    <div class="sm:hidden fixed top-0 inset-x-0 z-30 flex items-center h-12 px-4 bg-stone-50/95 dark:bg-neutral-950/95 backdrop-blur border-b border-neutral-100 dark:border-neutral-800">
+      <button
+        type="button"
+        class="flex items-center justify-center w-9 h-9 text-neutral-500 dark:text-neutral-400"
+        aria-label="Open navigation"
+        @click="mobileNavOpen = true"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M2 4h14M2 9h14M2 14h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>
 
-    <AppNav class="sm:hidden" />
+    <AppSidebar
+      :open="mobileNavOpen"
+      @open-task-sheet="isSheetOpen = true; mobileNavOpen = false"
+      @close="mobileNavOpen = false"
+    />
+
+    <div class="sm:pl-56 pt-12 sm:pt-0 pb-8 min-h-screen">
+      <slot />
+    </div>
 
     <TaskForm v-model="isSheetOpen" @submit="onTaskSubmit" />
 
@@ -60,7 +73,7 @@
       v-if="!focusTaskId"
       type="button"
       aria-label="Park a thought"
-      class="fixed bottom-24 right-4 sm:bottom-8 sm:right-8 z-40 w-12 h-12 rounded-full bg-purple-500 dark:bg-purple-600 text-white shadow-lg flex items-center justify-center hover:bg-purple-600 dark:hover:bg-purple-500 active:scale-95 transition-all"
+      class="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-40 w-12 h-12 rounded-full bg-purple-500 dark:bg-purple-600 text-white shadow-lg flex items-center justify-center hover:bg-purple-600 dark:hover:bg-purple-500 active:scale-95 transition-all"
       @click="openParkIt"
     >
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -81,7 +94,6 @@
 </template>
 
 <script setup lang="ts">
-import AppNav from '~/components/layout/AppNav.vue'
 import AppSidebar from '~/components/layout/AppSidebar.vue'
 import TaskForm from '~/components/task/TaskForm.vue'
 import FocusView from '~/components/focus/FocusView.vue'
@@ -126,6 +138,7 @@ onMounted(() => {
   window.addEventListener('offline', () => { isOffline.value = true })
 })
 
+const mobileNavOpen = ref(false)
 const isSheetOpen = ref(false)
 const tasksStore = useTasksStore()
 const projectsStore = useProjectsStore()

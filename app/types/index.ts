@@ -96,11 +96,12 @@ export interface CanvasItem {
   id: string
   board_id: string
   user_id: string
-  item_type: 'task' | 'document' | 'note'
+  item_type: 'task' | 'document' | 'note' | 'image'
   task_id: string | null
   document_id: string | null
   note_text: string | null
   note_color: NoteColor
+  image_url: string | null
   x: number
   y: number
   created_at: string

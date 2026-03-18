@@ -1,93 +1,101 @@
 <template>
   <div
     data-card
-    class="absolute select-none text-sm group"
+    class="absolute select-none text-sm group overflow-hidden"
     :class="[
-      isTextCard ? 'cursor-grab' : 'rounded-xl shadow-sm border cursor-grab transition-shadow',
-      cardBg,
-      selected
+      isTextCard
+        ? ''
+        : item.item_type === 'image' ? 'rounded-xl shadow-sm' : 'rounded-xl shadow-sm border',
+      isTextCard ? '' : cardBg,
+      !isTextCard && selected
         ? 'ring-2 ring-purple-400 dark:ring-purple-500 shadow-md'
-        : isTextCard ? '' : 'hover:shadow-md',
-      isDragging ? 'cursor-grabbing shadow-lg' : '',
+        : !isTextCard && item.item_type !== 'image' ? 'hover:shadow-md' : '',
+      isDragging && !isTextCard ? 'shadow-lg opacity-90' : '',
     ]"
-    :style="{ left: `${item.x}px`, top: `${item.y}px`, width: '220px' }"
+    :style="isTextCard
+      ? { left: `${item.x}px`, top: `${item.y}px`, minWidth: '140px', maxWidth: '320px' }
+      : { left: `${item.x}px`, top: `${item.y}px`, width: '200px', height: '200px' }"
     @pointerdown.stop="emit('pointerdown', $event)"
     @click.stop="emit('select', $event)"
   >
     <!-- Task card -->
     <template v-if="item.item_type === 'task' && task">
-      <div class="p-4">
-        <!-- Project labels at top -->
-        <div v-if="taskProjects.length" class="flex flex-wrap gap-1 mb-2.5">
-          <span
-            v-for="project in taskProjects"
-            :key="project.id"
-            class="text-xs px-2 py-0.5 rounded-md font-medium"
-            :style="{ backgroundColor: hexWithOpacity(project.color_tag), color: getColorHex(project.color_tag) ?? '#6b7280' }"
-          >{{ project.name }}</span>
-        </div>
+      <div class="flex h-full">
+        <!-- Project colour stripe -->
+        <div
+          class="w-1.5 flex-shrink-0"
+          :style="{ backgroundColor: taskProjects[0] ? (getColorHex(taskProjects[0].color_tag) ?? '#e5e7eb') : '#e5e7eb' }"
+        />
+        <div class="flex flex-col flex-1 p-3 overflow-hidden">
+          <!-- Project labels -->
+          <div v-if="taskProjects.length" class="flex flex-wrap gap-1 mb-2">
+            <span
+              v-for="project in taskProjects"
+              :key="project.id"
+              class="text-xs px-1.5 py-0.5 rounded-md font-medium"
+              :style="{ backgroundColor: hexWithOpacity(project.color_tag), color: getColorHex(project.color_tag) ?? '#6b7280' }"
+            >{{ project.name }}</span>
+          </div>
 
-        <div class="flex items-start gap-2">
-          <span
-            class="mt-0.5 flex-shrink-0 w-3 h-3 rounded-full border"
-            :class="task.status === 'done'
-              ? 'bg-green-400 border-green-400'
-              : task.status === 'in_progress'
-                ? 'bg-purple-400 border-purple-400'
-                : 'border-neutral-300 dark:border-neutral-600'"
-          />
-          <span
-            class="text-neutral-800 dark:text-neutral-100 font-medium leading-snug line-clamp-3 flex-1"
-            :class="task.status === 'done' ? 'line-through opacity-40' : ''"
-          >{{ task.title }}</span>
-        </div>
+          <div class="flex items-start gap-2 flex-1">
+            <span
+              class="mt-0.5 flex-shrink-0 w-3 h-3 rounded-full border"
+              :class="task.status === 'done'
+                ? 'bg-green-400 border-green-400'
+                : task.status === 'in_progress'
+                  ? 'bg-purple-400 border-purple-400'
+                  : 'border-neutral-300 dark:border-neutral-600'"
+            />
+            <span
+              class="text-neutral-800 dark:text-neutral-100 font-medium leading-snug line-clamp-4 flex-1"
+              :class="task.status === 'done' ? 'line-through opacity-40' : ''"
+            >{{ task.title }}</span>
+          </div>
 
-        <div class="flex items-center justify-end mt-3">
-          <button
-            type="button"
-            class="text-xs text-neutral-300 dark:text-neutral-700 hover:text-purple-400 transition-colors opacity-0 group-hover:opacity-100"
-            @click.stop="navigateTo(`/task/${task.id}`)"
-          >Open task ↗</button>
+          <div class="flex items-center justify-end mt-auto pt-2">
+            <button
+              type="button"
+              class="text-xs text-neutral-300 dark:text-neutral-700 hover:text-purple-400 transition-colors opacity-0 group-hover:opacity-100"
+              @click.stop="navigateTo(`/task/${task.id}`)"
+            >Open ↗</button>
+          </div>
         </div>
       </div>
     </template>
 
     <!-- Document card -->
     <template v-else-if="item.item_type === 'document' && document">
-      <div class="p-4">
-        <!-- Project labels at top -->
-        <div v-if="docProjects.length" class="flex flex-wrap gap-1 mb-2.5">
+      <div class="flex flex-col p-4 h-full overflow-hidden">
+        <div v-if="docProjects.length" class="flex flex-wrap gap-1 mb-2">
           <span
             v-for="project in docProjects"
             :key="project.id"
-            class="text-xs px-2 py-0.5 rounded-md font-medium"
+            class="text-xs px-1.5 py-0.5 rounded-md font-medium"
             :style="{ backgroundColor: hexWithOpacity(project.color_tag), color: getColorHex(project.color_tag) ?? '#6b7280' }"
           >{{ project.name }}</span>
         </div>
-
         <p class="text-neutral-800 dark:text-neutral-100 font-medium leading-snug line-clamp-2">{{ document.title || 'Untitled' }}</p>
-        <p v-if="docPreview" class="text-neutral-400 dark:text-neutral-500 text-xs mt-1.5 line-clamp-2 leading-relaxed">{{ docPreview }}</p>
-        <div class="flex items-center justify-end mt-3">
+        <p v-if="docPreview" class="text-neutral-400 dark:text-neutral-500 text-xs mt-1.5 line-clamp-3 leading-relaxed flex-1">{{ docPreview }}</p>
+        <div class="flex items-center justify-end mt-auto pt-2">
           <button
             type="button"
             class="text-xs text-neutral-300 dark:text-neutral-700 hover:text-purple-400 transition-colors opacity-0 group-hover:opacity-100"
             @click.stop="navigateTo(`/write/${document.id}`)"
-          >Open doc →</button>
+          >Open →</button>
         </div>
       </div>
     </template>
 
     <!-- Note / freeform text card -->
     <template v-else-if="item.item_type === 'note'">
-      <div class="p-4">
+      <div class="flex flex-col h-full p-4">
         <textarea
           v-if="editing"
           ref="textareaRef"
-          class="w-full bg-transparent outline-none resize-none leading-relaxed placeholder:text-neutral-400"
+          class="flex-1 w-full bg-transparent outline-none resize-none leading-relaxed placeholder:text-neutral-400"
           :class="isTextCard
             ? 'text-neutral-700 dark:text-neutral-300 text-base font-medium'
             : 'text-neutral-800 dark:text-neutral-900 text-sm'"
-          rows="4"
           placeholder="Write something…"
           :value="noteText"
           @input="noteText = ($event.target as HTMLTextAreaElement).value"
@@ -97,21 +105,23 @@
         />
         <p
           v-else
-          class="leading-relaxed min-h-[4rem] whitespace-pre-wrap break-words"
+          class="flex-1 leading-relaxed whitespace-pre-wrap break-words overflow-hidden"
           :class="[
             isTextCard
               ? 'text-neutral-700 dark:text-neutral-300 text-base font-medium'
               : 'text-neutral-800 dark:text-neutral-900 text-sm',
             noteText ? '' : 'opacity-40',
-            selected ? 'cursor-text' : '',
           ]"
-          @click.stop="onNoteBodyClick($event)"
-        >{{ noteText || (selected ? 'Click to edit' : 'Click to select') }}</p>
+          @click.stop="startEditing"
+        >{{ noteText || 'Click to write…' }}</p>
 
-        <!-- Footer: color picker (sticky only) + delete -->
+        <!-- Footer: color picker + delete -->
         <div
-          class="flex items-center mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
-          :class="isTextCard ? 'justify-end' : 'justify-between'"
+          class="flex items-center mt-2 transition-opacity"
+          :class="[
+            isTextCard ? 'justify-end' : 'justify-between',
+            selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+          ]"
         >
           <div v-if="!isTextCard" class="flex gap-1">
             <button
@@ -132,12 +142,23 @@
       </div>
     </template>
 
-    <!-- Delete button for task/doc cards (shown on group-hover) -->
+    <!-- Image card -->
+    <template v-else-if="item.item_type === 'image' && item.image_url">
+      <img
+        :src="item.image_url"
+        class="w-full h-full object-cover"
+        draggable="false"
+        alt=""
+      />
+    </template>
+
+    <!-- Delete button for task/doc/image cards -->
     <button
       v-if="item.item_type !== 'note'"
       type="button"
-      class="absolute top-2 right-2 w-5 h-5 flex items-center justify-center text-neutral-300 dark:text-neutral-700 hover:text-red-400 dark:hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 rounded"
+      class="absolute top-2 right-2 w-5 h-5 flex items-center justify-center text-neutral-300 dark:text-neutral-600 hover:text-red-400 dark:hover:text-red-400 bg-white/70 dark:bg-neutral-900/70 rounded transition-all"
       style="font-size: 16px; line-height: 1;"
+      :class="selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
       @click.stop="emit('remove')"
     >×</button>
   </div>
@@ -194,14 +215,12 @@ const docPreview = computed(() => {
   const line = content.split('\n')
     .map(l => l.replace(/^#{1,6}\s+/, '').replace(/[*_`~]/g, '').trim())
     .find(l => l.length > 0 && l.toLowerCase() !== (props.document?.title ?? '').toLowerCase().trim()) ?? ''
-  return line.length > 70 ? line.slice(0, 70) + '…' : line
+  return line.length > 80 ? line.slice(0, 80) + '…' : line
 })
 
 const cardBg = computed(() => {
   if (props.item.item_type === 'note') {
-    if (props.item.note_color === 'none') {
-      return 'bg-transparent border-transparent shadow-none'
-    }
+    if (props.item.note_color === 'none') return 'bg-transparent border-transparent shadow-none'
     return noteStickyBg(props.item.note_color)
   }
   return 'bg-white dark:bg-neutral-900 border-neutral-100 dark:border-neutral-800'
@@ -238,14 +257,6 @@ function hexWithOpacity(colorTag: string | null): string {
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)
   return `rgba(${r}, ${g}, ${b}, 0.15)`
-}
-
-function onNoteBodyClick(e: MouseEvent) {
-  if (props.selected) {
-    startEditing()
-  } else {
-    emit('select', e)
-  }
 }
 
 async function startEditing() {
