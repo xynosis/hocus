@@ -128,28 +128,34 @@ Recurring tasks, task dependencies, project templates, "pick up this task", week
 
 ---
 
-## Phase 13 — Backend Formalisation _(planned)_
+## Phase 13 — Backend Formalisation _(deprioritised)_
 
-**Goal:** Replace client-side business logic with a proper API layer. Stabilise after Phase 10 when the core data model has settled.
+**Status:** Deferred indefinitely. A standalone Node + Hono API layer adds no meaningful user-visible value at current scale. Backend work will be introduced only when a specific feature demands it.
 
-| Task | Description |
+**When to revisit:** Each of the following features will require a backend component when built — at that point, use **Supabase Edge Functions** for the specific need rather than standing up a full API service:
+
+- **Email to task** — inbound email webhook
+- **Push notifications** — server-side scheduling, device token management
+- **Calendar sync** — OAuth token refresh, two-way event sync
+- **Email digests** — scheduled daily/weekly sends
+
+**What was planned (for reference):**
+
+| Task | Notes |
 |---|---|
-| 13.1 | Evaluate and select API framework (Node + Hono recommended) |
-| 13.2 | Set up API service alongside Supabase — auth via Supabase JWT verification |
-| 13.3 | Move orbit inference to scheduled job (replaces client-side app load check) |
-| 13.4 | Move email-to-task handler to API (inbound email webhook) |
-| 13.5 | Move weekly review generation to API |
-| 13.6 | Set up deployment pipeline for API service on Hetzner via Coolify |
-| 13.7 | Future: push notifications, calendar sync, third-party integrations |
-
-**Rationale:** Data model is still actively changing through Phases 9–11. Building scheduled/backend logic on an unstable schema is expensive.
+| Move orbit inference to scheduled job | Low priority — client-side inference on load is fine unless notifications are added |
+| Set up full API service (Node + Hono) | Not justified until multiple server-side features exist simultaneously |
 
 ---
 
 ## Future Phases (Post-v2 Backlog)
 
-- **Email to task** — inbound email → Supabase function
-- **Keyboard shortcuts** — `P` for Park It, `F` for focus, `N` for new task (desktop)
+- **Email to task** — inbound email → Supabase Edge Function _(requires backend)_
+- **Keyboard shortcuts** — `N` for new task, `P` for Park It ✅
+- **PWA / offline** — install prompt, service worker, offline banner ✅
+- **Push notifications** — server-side scheduling _(requires backend)_
+- **Calendar sync** — OAuth token refresh, two-way event sync _(requires backend)_
+- **Email digests** — daily/weekly sends _(requires backend)_
 - **Shutdown routine enhancement** — track completion streaks, show over time
 - **Time blocking** — link a task to a time of day, shown in Next 7 Days
 - **Focus session history** — log how long focus mode was active per task
@@ -158,8 +164,6 @@ Recurring tasks, task dependencies, project templates, "pick up this task", week
 - **Spatial canvas** — planned as a separate tool that integrates with Hocus
 - **Distraction-free writing** — planned as a separate tool that integrates with Hocus
 - **Collaboration / shared lists** — v3/v4
-- **Push notifications** — post-v2
-- **PWA / offline** — post-v2
 - **Native app** — post-v2
 - **Mood check-in** — stored for later
 - **Project board view** (grouped by status)

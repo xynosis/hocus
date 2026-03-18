@@ -73,6 +73,31 @@
                 Calendar
             </NuxtLink>
 
+            <NuxtLink to="/write" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+                :class="route.path.startsWith('/write')
+                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+                style="min-height: 44px;">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 17h12M13 3l3 3-8 8H5v-3L13 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                Write
+            </NuxtLink>
+
+            <NuxtLink to="/canvas" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+                :class="route.path.startsWith('/canvas')
+                    ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+                style="min-height: 44px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="1" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <rect x="9" y="1" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <rect x="1" y="10" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <rect x="9" y="10" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                </svg>
+                Canvas
+            </NuxtLink>
+
             <NuxtLink to="/inbox" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
                 :class="route.path === '/inbox'
                     ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-medium'

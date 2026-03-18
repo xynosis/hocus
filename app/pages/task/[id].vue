@@ -82,6 +82,21 @@
         </button>
       </div>
 
+      <!-- Writing space -->
+      <div class="px-1">
+        <button
+          type="button"
+          class="w-full flex items-center gap-2.5 py-3 px-4 rounded-xl text-sm font-medium border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          style="min-height: 44px;"
+          @click="openWritingSpace"
+        >
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" class="flex-shrink-0">
+            <path d="M4 17h12M13 3l3 3-8 8H5v-3L13 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          {{ linkedDocumentId ? 'Open document' : 'Open writing space' }}
+        </button>
+      </div>
+
       <!-- Start fresh (linked pattern) -->
       <div v-if="task.status === 'done' && task.pattern_id" class="px-1">
         <button
@@ -327,7 +342,24 @@ import { useProjectsStore } from '~/stores/projects'
 import { usePatternsStore } from '~/stores/patterns'
 import { useDependenciesStore } from '~/stores/dependencies'
 import { useTaskNotesStore } from '~/stores/taskNotes'
+import { useDocumentsStore } from '~/features/write/stores/documents'
+
 const projectsStore = useProjectsStore()
+const documentsStore = useDocumentsStore()
+
+const linkedDocumentId = computed(() =>
+  task.value ? documentsStore.getByTaskId(task.value.id)?.id ?? null : null
+)
+
+async function openWritingSpace() {
+  if (!task.value) return
+  if (linkedDocumentId.value) {
+    navigateTo(`/write/${linkedDocumentId.value}`)
+    return
+  }
+  const doc = await documentsStore.create({ title: task.value.title, task_id: task.value.id })
+  if (doc) navigateTo(`/write/${doc.id}`)
+}
 const patternsStore = usePatternsStore()
 const dependenciesStore = useDependenciesStore()
 
@@ -347,6 +379,7 @@ onMounted(() => {
   if (route.query.breakdown === '1') {
     nextTick(() => breakdownSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
+  documentsStore.fetchAll()
 })
 
 const task = computed(() => tasksStore.getTaskById(route.params.id as string))

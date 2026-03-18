@@ -71,3 +71,37 @@ export interface UserPattern {
   steps: string[]
   created_at: string
 }
+
+export interface WritingDocument {
+  id: string
+  user_id: string
+  task_id: string | null
+  title: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Board {
+  id: string
+  user_id: string
+  title: string
+  created_at: string
+  updated_at: string
+}
+
+export type NoteColor = 'yellow' | 'pink' | 'green' | 'blue' | 'purple' | 'none'
+
+export interface CanvasItem {
+  id: string
+  board_id: string
+  user_id: string
+  item_type: 'task' | 'document' | 'note'
+  task_id: string | null
+  document_id: string | null
+  note_text: string | null
+  note_color: NoteColor
+  x: number
+  y: number
+  created_at: string
+}

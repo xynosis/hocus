@@ -50,6 +50,39 @@
     </NuxtLink>
 
     <NuxtLink
+      to="/write"
+      class="flex flex-col items-center justify-center gap-1 text-xs transition-colors"
+      :class="route.path.startsWith('/write')
+        ? 'text-purple-500 dark:text-purple-400'
+        : 'text-neutral-400 dark:text-neutral-500'"
+      style="min-width: 64px; min-height: 44px;"
+    >
+      <span class="block h-0.5 w-6 rounded-full transition-colors mb-0.5" :class="route.path.startsWith('/write') ? 'bg-purple-500 dark:bg-purple-400' : 'bg-transparent'" />
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M4 17h12M13 3l3 3-8 8H5v-3L13 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <span>Write</span>
+    </NuxtLink>
+
+    <NuxtLink
+      to="/canvas"
+      class="flex flex-col items-center justify-center gap-1 text-xs transition-colors"
+      :class="route.path.startsWith('/canvas')
+        ? 'text-purple-500 dark:text-purple-400'
+        : 'text-neutral-400 dark:text-neutral-500'"
+      style="min-width: 64px; min-height: 44px;"
+    >
+      <span class="block h-0.5 w-6 rounded-full transition-colors mb-0.5" :class="route.path.startsWith('/canvas') ? 'bg-purple-500 dark:bg-purple-400' : 'bg-transparent'" />
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect x="2" y="2" width="7" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <rect x="11" y="2" width="7" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <rect x="2" y="12" width="7" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <rect x="11" y="12" width="7" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      </svg>
+      <span>Canvas</span>
+    </NuxtLink>
+
+    <NuxtLink
       to="/account"
       class="flex flex-col items-center justify-center gap-1 text-xs transition-colors"
       :class="route.path === '/account'

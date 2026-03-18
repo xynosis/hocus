@@ -74,21 +74,24 @@ export default defineNuxtConfig({
 
   app: {
     layoutTransition: false,
-    app: {
-      layoutTransition: false,
-      head: {
-        title: 'Hocus',
-        link: [
-          { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-        ]
-      }
+    head: {
+      title: 'Hocus',
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+      ]
     },
   },
   vite: {
     optimizeDeps: {
       include: [
         'vue-draggable-plus',
-        'canvas-confetti',]
+        'canvas-confetti',
+        '@tiptap/vue-3',
+        '@tiptap/starter-kit',
+        'tiptap-markdown',
+        '@tiptap/extension-character-count',
+        '@tiptap/extension-placeholder',
+      ]
     }
   },
 
