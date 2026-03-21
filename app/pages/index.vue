@@ -1,7 +1,23 @@
 <template>
+  <!-- Teleport title + action into the layout's mobile top bar -->
+  <Teleport to="#mobile-page-header" :defer="true">
+    <div class="flex items-center justify-between w-full pl-2 pr-1">
+      <span class="text-base font-semibold text-neutral-800 dark:text-neutral-100">Today</span>
+      <button
+        v-if="!startHereActive && todayTasks.length > 1"
+        type="button"
+        class="text-xs font-medium px-2.5 py-1.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 whitespace-nowrap"
+        style="min-height: 36px;"
+        @click="activateStartHere"
+      >
+        Where do I start?
+      </button>
+    </div>
+  </Teleport>
+
   <div class="p-4">
-    <!-- Normal Today header -->
-    <div v-if="!startHereActive" class="flex items-center justify-between px-2 py-3">
+    <!-- Desktop header -->
+    <div v-if="!startHereActive" class="hidden sm:flex items-center justify-between px-2 py-3">
       <div class="flex items-center gap-3">
         <div>
           <h1 class="text-3xl font-semibold text-neutral-800 dark:text-neutral-100">Today</h1>
@@ -16,27 +32,22 @@
           7 days
         </NuxtLink>
       </div>
-      <div class="flex items-center gap-1">
-        <SearchBar v-model="search" />
-        <button v-if="todayTasks.length > 1" type="button"
-          class="text-xs font-medium px-3 py-2 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900 transition-colors"
-          style="min-height: 44px;" @click="activateStartHere">
-          Where do I start?
-        </button>
-        <button type="button" class="relative flex items-center justify-center rounded-xl transition-colors" :class="filterCount > 0
-          ? 'text-purple-500 dark:text-purple-400'
-          : 'text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300'"
-          style="min-height: 44px; min-width: 44px;" aria-label="Filter tasks" @click="showFilterSheet = true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 4h14M5 9h8M8 14h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-          </svg>
-          <span v-if="filterCount > 0"
-            class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center"
-            style="font-size: 10px;">
-            {{ filterCount }}
-          </span>
-        </button>
-      </div>
+      <button v-if="todayTasks.length > 1" type="button"
+        class="text-xs font-medium px-3 py-2 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900 transition-colors"
+        style="min-height: 44px;" @click="activateStartHere">
+        Where do I start?
+      </button>
+    </div>
+
+    <!-- Mobile date + 7 days tabs -->
+    <div v-if="!startHereActive" class="sm:hidden flex items-center gap-2 px-2 pt-3 pb-2">
+      <span class="px-3 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm font-medium">
+        {{ todayLabel }}
+      </span>
+      <NuxtLink to="/week"
+        class="px-3 py-1.5 rounded-lg text-neutral-400 dark:text-neutral-500 text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors border border-transparent">
+        7 days
+      </NuxtLink>
     </div>
 
     <!-- Start Here: single task view -->
@@ -94,7 +105,7 @@
             </svg>
           </button>
           <div class="flex-1 min-w-0">
-            <TaskCard :task="task" :search-term="searchTerm || undefined"
+            <TaskCard :task="task"
               @click="reorderMode ? undefined : onTaskClick(task)"
               @delete="onDelete(task.id)" @door-opener="onDoorOpener(task)" />
           </div>
@@ -157,7 +168,7 @@
     </template>
 
     <!-- Weekly review + backlog triage + avoidance entry -->
-    <div v-if="!startHereActive && !searchTerm" class="px-2 pt-1 flex flex-wrap gap-x-5">
+    <div v-if="!startHereActive" class="px-2 pt-1 flex flex-wrap gap-x-5">
       <button type="button"
         class="py-2 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
         style="min-height: 44px;" @click="openReview">
@@ -181,14 +192,14 @@
     </div>
 
     <!-- Upcoming + untouched nudge -->
-    <div v-if="!searchTerm && !startHereActive && untouchedUpcoming.length > 0" class="mt-4 flex flex-col gap-2">
+    <div v-if="!startHereActive && untouchedUpcoming.length > 0" class="mt-4 flex flex-col gap-2">
       <p class="px-2 text-sm text-neutral-400 dark:text-neutral-500">Coming up — worth a thought</p>
       <TaskCard v-for="task in untouchedUpcoming" :key="task.id" :task="task" @click="onTaskClick(task)"
         @delete="onDelete(task.id)" @door-opener="onDoorOpener(task)" />
     </div>
 
-    <!-- Drifted tasks (orbit but no date — not in main today list) -->
-    <div v-if="!searchTerm && !startHereActive && driftedTasks.length > 0" class="mt-4 flex flex-col gap-2">
+    <!-- Drifted tasks -->
+    <div v-if="!startHereActive && driftedTasks.length > 0" class="mt-4 flex flex-col gap-2">
       <p class="px-2 text-sm text-neutral-400 dark:text-neutral-500">Drifted — tap to pick back up</p>
       <TaskCard v-for="task in driftedTasks" :key="task.id" :task="task"
         @delete="onDelete(task.id)" />
@@ -200,10 +211,7 @@
       </p>
     </BaseModal>
 
-    <FilterSheet v-model="showFilterSheet" :filters="filters" @update:filters="filters = $event" />
-
     <DoorOpenerSheet v-if="doorOpenerTask" v-model="showDoorOpenerSheet" :task="doorOpenerTask" />
-
   </div>
 </template>
 
@@ -212,16 +220,12 @@ import { useTasksStore } from '~/stores/tasks'
 import type { Task } from '~/types'
 import { isTodayOrOverdue, isOverdue, isToday, toDateValue } from '~/utils/dates'
 import { pickStartHereTask } from '~/utils/startHere'
-import { emptyFilters, activeFilterCount, applyFilters } from '~/utils/filters'
-import type { TaskFilters } from '~/utils/filters'
 import BaseModal from '~/components/ui/BaseModal.vue'
-import FilterSheet from '~/components/ui/FilterSheet.vue'
-import SearchBar from '~/components/ui/SearchBar.vue'
 import DoorOpenerSheet from '~/components/task/DoorOpenerSheet.vue'
 import { VueDraggable } from 'vue-draggable-plus'
 
 const todayLabel = computed(() =>
-  new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+  new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 )
 
 const tasksStore = useTasksStore()
@@ -231,12 +235,6 @@ const { openTriage } = useBacklogTriage()
 const { openAvoidance } = useAvoidance()
 const { openSweep } = useEndOfDaySweep()
 const { applyOrder, saveOrder } = useTodayOrder()
-
-// Search and filters must be declared before computeds that use them
-const search = ref('')
-const showFilterSheet = ref(false)
-const filters = ref<TaskFilters>(emptyFilters())
-const filterCount = computed(() => activeFilterCount(filters.value))
 
 const STALE_DAYS = 3
 const avoidanceCount = computed(() =>
@@ -275,16 +273,7 @@ const backlogCount = computed(() =>
   ).length
 )
 
-const searchTerm = computed(() => search.value.trim().toLowerCase())
-
 const todayTasks = computed(() => {
-  if (searchTerm.value) {
-    return tasksStore.tasks.filter(t =>
-      t.title.toLowerCase().includes(searchTerm.value) ||
-      (t.notes?.toLowerCase().includes(searchTerm.value) ?? false)
-    )
-  }
-
   const filtered = tasksStore.tasks.filter(task => {
     if (task.status === 'done') return false
     const workingOnMatch = task.working_on_date ? isTodayOrOverdue(task.working_on_date) : false
@@ -292,9 +281,7 @@ const todayTasks = computed(() => {
     return workingOnMatch || dueDateMatch
   })
 
-  const withFilters = applyFilters(filtered, filters.value)
-
-  return withFilters.sort((a, b) => {
+  return filtered.sort((a, b) => {
     const aOverdueDue = a.due_date && isOverdue(a.due_date)
     const bOverdueDue = b.due_date && isOverdue(b.due_date)
     const aOverdueWorking = a.working_on_date && isOverdue(a.working_on_date)
@@ -343,7 +330,6 @@ function formatTime(isoString: string): string {
   return new Date(isoString).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
-
 // Start Here
 const startHereActive = ref(false)
 const startHereTask = ref<ReturnType<typeof pickStartHereTask>>(null)
@@ -366,7 +352,6 @@ function onTaskClick(task: Task) {
   navigateTo(`/task/${task.id}`)
 }
 
-// Orbit tasks with no date — not in main today list, shown in Drifted section
 const driftedTasks = computed(() =>
   tasksStore.tasks.filter(t => {
     if (t.status !== 'orbit' || t.parent_id !== null) return false
@@ -377,7 +362,6 @@ const driftedTasks = computed(() =>
   })
 )
 
-// Door opener sheet
 const showDoorOpenerSheet = ref(false)
 const doorOpenerTask = ref<Task | null>(null)
 
@@ -386,8 +370,6 @@ function onDoorOpener(task: Task) {
   showDoorOpenerSheet.value = true
 }
 
-
-// Upcoming + untouched nudge
 const untouchedUpcoming = computed(() => {
   const now = new Date()
   const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)

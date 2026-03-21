@@ -2,19 +2,7 @@
   <div class="max-w-2xl mx-auto px-4 py-8">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center gap-4">
-        <button
-          type="button"
-          class="flex items-center gap-1.5 text-sm text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-          @click="navigateTo('/')"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Hocus
-        </button>
-        <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Boards</h1>
-      </div>
+      <h1 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Boards</h1>
       <button
         type="button"
         class="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium transition-colors active:scale-95"

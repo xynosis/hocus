@@ -15,7 +15,7 @@
     <div class="sm:hidden fixed top-0 inset-x-0 z-30 flex items-center h-12 px-4 bg-stone-50/95 dark:bg-neutral-950/95 backdrop-blur border-b border-neutral-100 dark:border-neutral-800">
       <button
         type="button"
-        class="flex items-center justify-center w-9 h-9 text-neutral-500 dark:text-neutral-400"
+        class="flex items-center justify-center w-9 h-9 flex-shrink-0 text-neutral-500 dark:text-neutral-400"
         aria-label="Open navigation"
         @click="mobileNavOpen = true"
       >
@@ -23,6 +23,7 @@
           <path d="M2 4h14M2 9h14M2 14h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </button>
+      <div id="mobile-page-header" class="flex-1 flex items-center min-w-0" />
     </div>
 
     <AppSidebar

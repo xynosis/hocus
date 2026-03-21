@@ -6,10 +6,11 @@ _Paste this at the start of any new chat to restore context._
 **Hocus** — ADHD-friendly task management app. Nuxt 4 + TypeScript + Tailwind + Pinia + Supabase. Mobile-first web. Live at todo.kierancutting.co.uk.
 
 ## Product Vision
-Three-tool suite for ADHD-friendly deep work:
-- **Hocus** — task and focus management (this app)
-- **[Spatial tool]** — Miro-style canvas, imports Hocus tasks. Separate product.
-- **[Writing tool]** — distraction-free writing, links to Hocus tasks. Separate product.
+Unified ADHD-friendly life OS:
+- **Tasks** — task and focus management (original Hocus)
+- **Write** — distraction-free writing at `/write`, links to tasks
+- **Canvas** — Miro-style whiteboard at `/canvas`, embeds tasks + docs
+- All three integrated into one app. Future pillars: read-later, reminders, budget tracking.
 
 ## Decisions Made
 
@@ -60,7 +61,7 @@ Three-tool suite for ADHD-friendly deep work:
 | Overdue tint | red (not orange) | Fires when due_date overdue and status ≠ done |
 | Background | stone-50 / neutral-950 dark | Warm stone throughout |
 | Drag-and-drop | `vue-draggable-plus` | Mouse + touch |
-| Park It button | Floating purple + button in default.vue | Hidden during focus; replaces + in bottom nav |
+| Park It button | Floating purple + button in default.vue | Hidden during focus; `bottom-6 sm:bottom-8` (adjusted after bottom nav removal) |
 | Park It capture | Multi-line textarea; one line = one task | All land in Inbox (no project, no date) |
 | Inbox | `/inbox` — tasks with no project (renamed from Misc) | Inbox tray SVG icon |
 | Inbox empty state | "Inbox is clear" | |
@@ -78,7 +79,7 @@ Three-tool suite for ADHD-friendly deep work:
 | Project colors | Same TaskColor palette | Left border on cards, dot in sidebar |
 | Project progress bar | done/total shown on project list | |
 | Desktop layout | Left sidebar w-56 + main area | Today, projects, Next 7 days, Calendar, Inbox, Backlog, New task, Account |
-| Mobile nav | Today, Projects, Inbox, Account | No + button; floating Park It replaces it |
+| Mobile nav | Hamburger (☰) top-left → slide-in sidebar overlay | AppNav.vue retained but unused; AppSidebar handles both desktop (fixed) and mobile (overlay via `open` prop + backdrop) |
 | Completed in project/inbox | Hidden by default, toggle to show, resets on nav | |
 | Account page | Email, sign out, delete note | hi@kierancutting.co.uk for deletion |
 | Loading states | SkeletonCard with pulse | |
@@ -147,16 +148,27 @@ hocus/
 │   │   ├── focus/FocusView.vue, PomodoroTimer.vue, PickUpSheet.vue
 │   │   ├── backlog/BacklogTriage.vue, AvoidanceTriage.vue
 │   │   ├── review/WeeklyReview.vue, EndOfDaySweep.vue
-│   │   ├── layout/AppNav.vue, AppSidebar.vue
+│   │   ├── layout/AppNav.vue (retained, unused), AppSidebar.vue
 │   │   └── ui/BaseModal.vue, ColorTag.vue, ErrorMessage.vue, FilterSheet.vue,
 │   │            NaturalDateInput.vue, SearchBar.vue, SkeletonCard.vue
 │   ├── composables/useFocus.ts, useAmbientSound.ts, useWeeklyReview.ts,
 │   │              useBacklogTriage.ts, useParkIt.ts, useAvoidance.ts, useTodayOrder.ts,
 │   │              useEndOfDaySweep.ts
-│   ├── layouts/default.vue, auth.vue
+│   ├── features/
+│   │   ├── write/
+│   │   │   ├── stores/documents.ts
+│   │   │   ├── composables/useWriteFocus.ts
+│   │   │   └── components/WriteEditor.vue
+│   │   └── canvas/
+│   │       ├── stores/boards.ts, canvas-items.ts, canvas-connections.ts
+│   │       └── components/CanvasCard.vue
+│   ├── layouts/default.vue, auth.vue, write.vue, canvas.vue
 │   ├── middleware/auth.global.ts
-│   ├── pages/index.vue, inbox.vue, week.vue, calendar.vue, account.vue, projects/index.vue,
-│   │         projects/[id].vue, task/[id].vue, auth/login.vue, auth/signup.vue
+│   ├── pages/index.vue, inbox.vue, week.vue, calendar.vue, account.vue,
+│   │         projects/index.vue, projects/[id].vue, task/[id].vue,
+│   │         auth/login.vue, auth/signup.vue,
+│   │         write/index.vue, write/[id].vue,
+│   │         canvas/index.vue, canvas/[id].vue
 │   ├── plugins/auth.client.ts
 │   ├── stores/auth.ts, tasks.ts, projects.ts, taskNotes.ts, patterns.ts, dependencies.ts
 │   ├── types/index.ts, database.types.ts
@@ -187,32 +199,64 @@ hocus/
 | `20260316000001_tasks_pattern_id.sql` | pattern_id FK on tasks |
 | `20260317000000_tasks_recurrence.sql` | recurrence column (daily/weekly/monthly) |
 | `20260317000001_task_dependencies.sql` | task_dependencies table with RLS |
-| `20260318000000_project_sections.sql` | project_sections table with RLS ⚠️ pending push |
-| `20260318000001_tasks_section_id.sql` | section_id FK on tasks ⚠️ pending push |
-| `20260318000002_task_notes.sql` | task_notes table with RLS ⚠️ pending push |
-
-> ⚠️ Run `supabase db push` to apply the three pending migrations.
+| `20260318000000_project_sections.sql` | project_sections table with RLS |
+| `20260318000001_tasks_section_id.sql` | section_id FK on tasks |
+| `20260318000002_task_notes.sql` | task_notes table with RLS |
+| `20260320000000_documents.sql` | documents table with RLS |
+| `20260321000000_canvas.sql` | boards + canvas_items tables with RLS |
+| `20260321000001_canvas_images.sql` | image_url on canvas_items, 'image' item_type, canvas-images storage bucket |
+| `20260321000002_canvas_connections.sql` | canvas_connections table (bezier connections between items) with RLS |
+| `20260322000000_canvas_frames.sql` | width, height, frame_id columns; 'frame' item_type |
+| `20260322000001_canvas_groups.sql` | group_id uuid on canvas_items |
+| `20260322000002_canvas_shapes.sql` | 'rect' and 'ellipse' item_types |
+| `20260322000003_canvas_connection_labels.sql` | label text on canvas_connections |
+| `20260322000004_canvas_sort_order.sql` | sort_order bigint on canvas_items (z-layer control) |
+| `20260322000005_write_templates.sql` | write_templates table with RLS |
+| `20260322000006_write_document_tags.sql` | tags text[] on documents |
+| `20260322000007_user_keywords.sql` | user_keywords table (global keyword tracking) with RLS |
 
 ## Current Position
-- **Phase:** Phase 12 complete + orbit lifecycle fixes.
-- **Completed in Phase 12:** Visual design overhaul (DM Sans headers, card elevation, heading sizes, drag handle opacity, action row, bottom nav pill, focus mode styling, sidebar cleanup), confetti on all task completions, Focus Mode elapsed timer, auto session summary notes, Park It in Focus Mode, 90-min hyperfocus nudge, Pomodoro break activity suggestions, Pomodoro re-entry confirmation.
-- **Post-12 (orbit lifecycle):** Split orbit inference thresholds (4h atomic / 3 days container). Auto-set in_progress on Focus Mode entry for atomic tasks. Auto-promote parent to in_progress when first child completed.
-- **Next:** Phase 13 — Backend Formalisation (Node + Hono API).
-- **⚠️ To revisit:** orbit lifecycle thresholds and trigger conditions (split threshold approach is uncertain — review after real use).
-- **Pending migrations to push:** `20260318000000`, `20260318000001`, `20260318000002`
-- **Type debt:** project_sections and task_notes not in generated Supabase types — re-run `supabase gen types typescript --linked > app/types/database.types.ts` after pushing migrations.
+- **Phase:** Write + Canvas fully shipped as integrated Hocus features.
+- **Write feature:** Full distraction-free writing mode at `/write`. Tiptap editor, markdown storage, autosave, export (MD + PDF), focus mode, typewriter mode, paragraph focus, word/time goals, task linking, auto-title from heading, create-task-from-selection. Tags (text[] on documents, filter on index). Outline panel (headings sidebar, click to jump). Save as template / create from template (write_templates table). Global keywords (user_keywords table + store — select text → "Mark keyword" → saved globally, persists across docs, click to search all docs mentioning that word). ⚠️ Keyword highlighting (dotted underline in editor) broken — see Blockers.
+- **Canvas feature:** Full-screen Miro-style board at `/canvas` (fixed inset-0, no top offset). Complete feature set:
+  - Pan/zoom (wheel + pinch), grid snapping (28px), multi-select lasso, drag-to-move
+  - Item types: task card, document card, sticky note (colored), freeform text, image (paste), frame, rect, ellipse
+  - Frames: named containers, drag moves contained items, auto frame-containment on drop
+  - Shapes (rect/ellipse): freely resizable via corner drag handles (screen-space, snap on release), no placeholder text
+  - Bezier connections with arrowheads, click-to-delete, double-click to add/edit label
+  - Layer ordering: sort_order on canvas_items; bring-to-front / send-to-back toolbar buttons + ⌘]/⌘[
+  - Grouping: ⌘G / ⌘⇧G, group selection expansion on click/lasso
+  - Floating sidebar (left-centre): pan, select, frame, rect, ellipse, sticky, text, add-tasks/docs panel
+  - Sidebar drag-to-canvas: drag tool button → drop at exact position; click → place at canvas centre; ghost preview follows cursor
+  - Link handles: 4 edge dots on single selected card → click to start a connection
+  - Floating toolbar above selected item: S/M/L snap (non-shape cards), layer ↑↓ (all non-frame), Group/Ungroup
+  - Keyboard: Space=temp pan, Delete/Backspace=remove, ⌘G/⌘⇧G=group, ⌘]/⌘[=layer order
+- **Mobile nav:** Bottom nav removed. Hamburger (☰) top-left → slide-in AppSidebar overlay.
+- **⚠️ To revisit:** orbit lifecycle thresholds (split threshold approach is uncertain — review after real use).
+- **Type debt:** project_sections, task_notes, canvas tables not in generated Supabase types — re-run `supabase gen types typescript --linked > app/types/database.types.ts` after pushing all migrations.
+- **Pending migrations to push:** All migrations up to `20260322000004_canvas_sort_order.sql`.
 - **Blockers:** None.
+- **⚠️ Known broken — keyword highlighting:** `WriteEditor.vue` registers ProseMirror plugins via `editor.registerPlugin()` (TipTap v3 does not call `addProseMirrorPlugin` on custom extensions). The plugins register without error, but decoration rendering fails with `TypeError: Cannot read properties of undefined (reading 'localsInner')` inside ProseMirror's `_DecorationGroup.locals`. Tried: `Extension.create` + `addProseMirrorPlugin` (never called in TipTap v3), plugin-state pattern (`init`/`apply`), bare `props.decorations`, returning `null` instead of `DecorationSet.empty`. All crash at `registerPlugin` → `updateState`. Root cause likely: `Decoration`/`DecorationSet` imported from `@tiptap/pm/view` is a different bundle instance than TipTap's internal ProseMirror, causing instanceof checks to fail. To fix: either import from `prosemirror-view` directly (if accessible), or use a non-ProseMirror approach (e.g. DOM post-processing, CSS injection, or a TipTap Mark that's stripped on markdown serialisation). The `user_keywords` table and store are fully working — only the visual highlighting is broken.
 
 ## Post-launch / Future Backlog
 - Mobile UX audit, dark mode audit, accessibility audit, performance audit
 - Today view exit transition
 - Re-enable store unit tests with Supabase mocking
-- Backend formalisation — Node + Hono API (Phase 12)
+- ~~Backend formalisation — Node + Hono API~~ — deprioritised, Edge Functions per-feature instead
 - Email to task
 - Keyboard shortcuts — `P` Park It, `F` focus, `N` new task (desktop)
 - ~~Focus session history log~~ — done via auto session summary notes (Phase 12)
-- Spatial canvas (separate tool — long term)
-- Distraction-free writing (separate tool — long term)
+- ~~Spatial canvas~~ — shipped as Canvas feature in Hocus
+- ~~Distraction-free writing~~ — shipped as Write feature in Hocus
+- ~~Canvas: fix delete button~~ — resolved
+- ~~Canvas: card resize handles~~ — shapes have corner handles; notes/tasks use S/M/L snap
+- ~~Canvas: connections between cards~~ — bezier arrows with labels
+- ~~Canvas: frames, groups, shapes~~ — all shipped
+- ~~Canvas: layer ordering~~ — sort_order + toolbar + keyboard shortcuts
+- ~~Canvas: sidebar drag-to-canvas~~ — shipped
+- Canvas: multiple boards per user (supported in DB, no cross-board UI yet)
+- Canvas: formatting toolbar for sticky notes
+- Write: formatting toolbar
 - Collaboration / shared lists (v3/v4)
 - Mood check-in (stored for later)
 - YouTube lofi in Focus Mode (stored for later)

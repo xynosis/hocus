@@ -43,6 +43,15 @@
                     {{ task.title }}
                 </p>
 
+                <div v-if="taskProjects.length && showProjectTags !== false" class="flex flex-wrap gap-1 mt-1">
+                    <span
+                        v-for="project in taskProjects"
+                        :key="project!.id"
+                        class="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                        :style="{ backgroundColor: hexWithOpacity(project!.color_tag), color: getColorHex(project!.color_tag as never) ?? '#6b7280' }"
+                    >{{ project!.name }}</span>
+                </div>
+
                 <p v-if="notesSnippet" class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 leading-relaxed italic line-clamp-2">
                     {{ notesSnippet }}
                 </p>
@@ -130,14 +139,31 @@ import { isOverdue, formatDate } from '~/utils/dates'
 import { getColorHex } from '~/utils/colors'
 import { inferTaskSize } from '~/utils/taskSize'
 import { useDependenciesStore } from '~/stores/dependencies'
+import { useProjectsStore } from '~/stores/projects'
 import confetti from 'canvas-confetti'
 import TaskContextMenu from '~/components/task/TaskContextMenu.vue'
 
 const colorHex = computed(() => getColorHex(props.task.color_tag))
+
+const projectsStore = useProjectsStore()
+const taskProjects = computed(() => {
+  const ids = projectsStore.getProjectIdsForTask(props.task.id)
+  return ids.map(id => projectsStore.getProjectById(id)).filter(Boolean)
+})
+
+function hexWithOpacity(colorTag: string | null): string {
+  const hex = getColorHex(colorTag as never)
+  if (!hex) return '#f5f5f4'
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, 0.15)`
+}
 const taskSize = computed(() => inferTaskSize(props.task.estimated_minutes))
 const props = defineProps<{
     task: Task
     searchTerm?: string
+    showProjectTags?: boolean
 }>()
 
 const notesSnippet = computed((): string | null => {

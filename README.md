@@ -12,7 +12,6 @@ A calm, structured to-do list built for ADHD brains. Hocus helps you decide what
 **Projects** — group tasks into projects with a name, description, due date, and color. Tasks can belong to multiple projects. Completed tasks are hidden by default with a toggle to reveal them.
 
 **Misc** — a virtual inbox for tasks that don't belong to any project.
-
 **Task breakdown** — open any task to break it into subtasks. Reflective prompts (one at a time) help you think through decomposition. Pre-built templates scaffold common task types like writing an essay, planning an event, or filing paperwork.
 
 **Focus Mode** — full-screen, distraction-free view of a single task. Includes an optional Pomodoro timer (25 min work / 5 min break) with a soft audio cue on phase transitions. Completing all subtasks fires a confetti celebration.

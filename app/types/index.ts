@@ -78,8 +78,18 @@ export interface WritingDocument {
   task_id: string | null
   title: string
   content: string
+  tags: string[]
+  pinned_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface WriteTemplate {
+  id: string
+  user_id: string
+  title: string
+  content: string
+  created_at: string
 }
 
 export interface Board {
@@ -96,12 +106,17 @@ export interface CanvasItem {
   id: string
   board_id: string
   user_id: string
-  item_type: 'task' | 'document' | 'note' | 'image'
+  item_type: 'task' | 'document' | 'note' | 'image' | 'frame' | 'rect' | 'ellipse'
   task_id: string | null
   document_id: string | null
   note_text: string | null
   note_color: NoteColor
   image_url: string | null
+  frame_id: string | null
+  group_id: string | null
+  width: number | null
+  height: number | null
+  sort_order: number
   x: number
   y: number
   created_at: string

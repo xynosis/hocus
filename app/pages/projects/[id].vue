@@ -97,6 +97,7 @@
                     <div v-if="unsectionedActive.length > 0 || unsectionedDone.length > 0" class="flex flex-col gap-3">
                         <TaskCard v-for="task in unsectionedActive" :key="task.id" :task="task"
                             :search-term="search.trim().toLowerCase() || undefined"
+                            :show-project-tags="false"
                             @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
 
                         <template v-if="unsectionedDone.length > 0">
@@ -113,6 +114,7 @@
                             <template v-if="showCompleted">
                                 <div class="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex flex-col gap-3">
                                     <TaskCard v-for="task in unsectionedDone" :key="task.id" :task="task"
+                                        :show-project-tags="false"
                                         @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
                                 </div>
                             </template>
@@ -177,6 +179,7 @@
 
                         <TaskCard v-for="task in sectionActiveTasks(section.id)" :key="task.id" :task="task"
                             :search-term="search.trim().toLowerCase() || undefined"
+                            :show-project-tags="false"
                             @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
 
                         <template v-if="sectionDoneTasks(section.id).length > 0">
@@ -193,6 +196,7 @@
                             <template v-if="sectionShowCompleted.has(section.id)">
                                 <div class="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex flex-col gap-3">
                                     <TaskCard v-for="task in sectionDoneTasks(section.id)" :key="task.id" :task="task"
+                                        :show-project-tags="false"
                                         @click="navigateTo(`/task/${task.id}`)" @delete="onDeleteTask(task.id)" />
                                 </div>
                             </template>

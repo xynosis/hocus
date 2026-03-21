@@ -3,12 +3,15 @@ import type { CanvasItem, NoteColor } from '~/types'
 
 export type AddItemPayload = {
   board_id: string
-  item_type: 'task' | 'document' | 'note' | 'image'
+  item_type: 'task' | 'document' | 'note' | 'image' | 'frame' | 'rect' | 'ellipse'
   task_id?: string | null
   document_id?: string | null
   note_text?: string | null
   note_color?: NoteColor
   image_url?: string | null
+  frame_id?: string | null
+  width?: number | null
+  height?: number | null
   x: number
   y: number
 }
@@ -63,8 +66,12 @@ export const useCanvasItemsStore = defineStore('canvasItems', () => {
         task_id: payload.task_id ?? null,
         document_id: payload.document_id ?? null,
         note_text: payload.note_text ?? null,
-        note_color: payload.note_color ?? 'yellow',
+        note_color: payload.note_color ?? 'none',
         image_url: payload.image_url ?? null,
+        frame_id: payload.frame_id ?? null,
+        width: payload.width ?? null,
+        height: payload.height ?? null,
+        sort_order: Date.now(),
         x: payload.x,
         y: payload.y,
       })
@@ -117,6 +124,78 @@ export const useCanvasItemsStore = defineStore('canvasItems', () => {
     if (error) console.error('Failed to update note:', error.message)
   }
 
+  async function updateSize(id: string, width: number, height: number): Promise<void> {
+    const index = items.value.findIndex(i => i.id === id)
+    if (index !== -1) items.value[index] = { ...items.value[index]!, width, height }
+    const { error } = await supabase
+      .from('canvas_items')
+      .update({ width, height })
+      .eq('id', id)
+    if (error) console.error('Failed to update size:', error.message)
+  }
+
+  // Update size locally only (called on every pointermove during shape resize)
+  function sizeLocal(id: string, width: number, height: number): void {
+    const index = items.value.findIndex(i => i.id === id)
+    if (index !== -1) items.value[index] = { ...items.value[index]!, width, height }
+  }
+
+  async function bringToFront(id: string): Promise<void> {
+    const contentItems = items.value.filter(i => i.item_type !== 'frame')
+    const maxOrder = contentItems.reduce((m, i) => Math.max(m, i.sort_order), 0)
+    const newOrder = maxOrder + 1
+    const index = items.value.findIndex(i => i.id === id)
+    if (index !== -1) items.value[index] = { ...items.value[index]!, sort_order: newOrder }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('canvas_items').update({ sort_order: newOrder }).eq('id', id)
+  }
+
+  async function sendToBack(id: string): Promise<void> {
+    const contentItems = items.value.filter(i => i.item_type !== 'frame')
+    const minOrder = contentItems.reduce((m, i) => Math.min(m, i.sort_order), 0)
+    const newOrder = minOrder - 1
+    const index = items.value.findIndex(i => i.id === id)
+    if (index !== -1) items.value[index] = { ...items.value[index]!, sort_order: newOrder }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('canvas_items').update({ sort_order: newOrder }).eq('id', id)
+  }
+
+  async function groupItems(ids: string[]): Promise<void> {
+    const groupId = crypto.randomUUID()
+    for (const id of ids) {
+      const index = items.value.findIndex(i => i.id === id)
+      if (index !== -1) items.value[index] = { ...items.value[index]!, group_id: groupId }
+    }
+    const { error } = await supabase
+      .from('canvas_items')
+      .update({ group_id: groupId })
+      .in('id', ids)
+    if (error) console.error('Failed to group items:', error.message)
+  }
+
+  async function ungroupItems(groupId: string): Promise<void> {
+    for (let i = 0; i < items.value.length; i++) {
+      if (items.value[i]!.group_id === groupId) {
+        items.value[i] = { ...items.value[i]!, group_id: null }
+      }
+    }
+    const { error } = await supabase
+      .from('canvas_items')
+      .update({ group_id: null })
+      .eq('group_id', groupId)
+    if (error) console.error('Failed to ungroup items:', error.message)
+  }
+
+  async function updateFrameId(id: string, frameId: string | null): Promise<void> {
+    const index = items.value.findIndex(i => i.id === id)
+    if (index !== -1) items.value[index] = { ...items.value[index]!, frame_id: frameId }
+    const { error } = await supabase
+      .from('canvas_items')
+      .update({ frame_id: frameId })
+      .eq('id', id)
+    if (error) console.error('Failed to update frame_id:', error.message)
+  }
+
   async function updateColor(id: string, color: NoteColor): Promise<void> {
     const index = items.value.findIndex(i => i.id === id)
     if (index !== -1) items.value[index] = { ...items.value[index]!, note_color: color }
@@ -137,8 +216,15 @@ export const useCanvasItemsStore = defineStore('canvasItems', () => {
     add,
     remove,
     moveLocal,
+    sizeLocal,
     updatePosition,
     updateNote,
     updateColor,
+    updateSize,
+    bringToFront,
+    sendToBack,
+    groupItems,
+    ungroupItems,
+    updateFrameId,
   }
 })

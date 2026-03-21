@@ -161,8 +161,8 @@ Recurring tasks, task dependencies, project templates, "pick up this task", week
 - **Focus session history** — log how long focus mode was active per task
 - **Task aging** — visual indicator for tasks untouched beyond a threshold
 - **Recurring task patterns** — e.g. weekly review auto-creates a task every Monday
-- **Spatial canvas** — planned as a separate tool that integrates with Hocus
-- **Distraction-free writing** — planned as a separate tool that integrates with Hocus
+- ~~**Spatial canvas**~~ — shipped as Canvas feature within Hocus (Phase C)
+- ~~**Distraction-free writing**~~ — shipped as Write feature within Hocus (Phase W)
 - **Collaboration / shared lists** — v3/v4
 - **Native app** — post-v2
 - **Mood check-in** — stored for later
@@ -170,12 +170,64 @@ Recurring tasks, task dependencies, project templates, "pick up this task", week
 
 ---
 
+## Phase W — Distraction-Free Writing ✅
+
+Integrated at `/write` within Hocus. Separable: `app/features/write/` has no imports from Hocus-specific stores; cross-feature coupling only in `app/pages/write/`.
+
+| Task | Description |
+|---|---|
+| W1 | documents table migration + RLS ✅ |
+| W2 | documents store (Pinia), WritingDocument type ✅ |
+| W3 | Write layout (minimal chrome), /write index (doc list with project tags, delete, back) ✅ |
+| W4 | WriteEditor component — Tiptap + tiptap-markdown, CharacterCount, Placeholder ✅ |
+| W5 | /write/[id] editor page — autosave, title input, export MD + PDF, focus mode overlay ✅ |
+| W7.1 | Typewriter scroll mode ✅ |
+| W7.2 | Create task from selected text ✅ |
+| W7.3 | Paragraph focus (ProseMirror decoration, dims non-active blocks) ✅ |
+| W7.4 | Auto-title from first heading ✅ |
+| W7.5 | Return-to-task link from document ✅ |
+| W7.6 | "Open writing space" / "Open document" button on task detail ✅ |
+| — | Auto-delete empty documents on unmount ✅ |
+| — | Mobile header overflow fix (··· menu collapses secondary actions) ✅ |
+
+**Known gaps / future:** Formatting toolbar (deferred).
+
+---
+
+## Phase C — Canvas ✅
+
+Integrated at `/canvas` within Hocus. Separable: `app/features/canvas/` has no imports from Hocus-specific stores.
+
+| Task | Description |
+|---|---|
+| C1 | boards + canvas_items tables migration + RLS ✅ |
+| C2 | boards store, canvas-items store (Pinia) ✅ |
+| C3 | Canvas layout, /canvas index (board list) ✅ |
+| C4 | /canvas/[id] — infinite canvas, pan (pointer events), wheel zoom, grid background ✅ |
+| C5 | CanvasCard component — task, document, note, freeform text, image card types ✅ |
+| C6 | Drag cards (lazy pointer capture — deferred until 3px movement so clicks reach inner elements) ✅ |
+| C7 | Multi-select (shift+click), group drag ✅ |
+| C8 | Pinch-to-zoom (touch events, two-finger) ✅ |
+| C9 | Add panel — tasks (with project colour), docs, sticky notes, freeform text ✅ |
+| C10 | Note editing — single click on selected note enters edit mode ✅ |
+| C11 | Project colour stripe on task cards; project colour dots in add panel ✅ |
+| C12 | Backspace/Delete key removes selected items ✅ |
+| C13 | Image paste — uploads to Supabase Storage (canvas-images bucket), renders as image card ✅ |
+| C14 | Mobile nav replaced with hamburger → slide-in sidebar overlay ✅ |
+| C15 | Square (200×200) card shape; text cards auto-sized, no border/shadow ✅ |
+
+**Known issues:** Delete button (×) on cards does not respond to click — pointer event ordering issue. Backspace works as workaround.
+
+**Pending migration:** `20260321000001_canvas_images.sql` — run `supabase db push`.
+
+---
+
 ## Product Vision
 
-Hocus is the first of three planned tools:
+Hocus is a unified ADHD-friendly deep work suite:
 
-1. **Hocus** — task and focus management
-2. **[Spatial tool]** — free-form canvas for thinking and planning, imports Hocus tasks
-3. **[Writing tool]** — distraction-free writing, links to Hocus tasks as context
+1. **Tasks & Focus** — capture, prioritise, focus (core Hocus)
+2. **Canvas** — spatial thinking, boards, task post-its (`/canvas`)
+3. **Write** — distraction-free writing linked to tasks (`/write`)
 
 Together: capture + do → think + plan → write + create.

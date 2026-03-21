@@ -137,6 +137,10 @@ import TaskForm from '~/components/task/TaskForm.vue'
 const tasksStore = useTasksStore()
 const projectsStore = useProjectsStore()
 
+onMounted(() => {
+  if (tasksStore.tasks.length === 0) tasksStore.fetchTasks()
+})
+
 const search = ref('')
 const showFilterSheet = ref(false)
 const filters = ref<TaskFilters>(emptyFilters())

@@ -5,6 +5,7 @@ export type CreateDocumentPayload = {
   title?: string
   content?: string
   task_id?: string | null
+  tags?: string[]
 }
 
 export type UpdateDocumentPayload = Partial<Pick<WritingDocument, 'title' | 'content' | 'updated_at'>>
@@ -66,6 +67,7 @@ export const useDocumentsStore = defineStore('documents', () => {
         title: payload.title ?? 'Untitled',
         content: payload.content ?? '',
         task_id: payload.task_id ?? null,
+        tags: payload.tags ?? [],
       })
       .select()
       .single()
@@ -118,6 +120,25 @@ export const useDocumentsStore = defineStore('documents', () => {
     }
   }
 
+  async function updateTags(id: string, tags: string[]): Promise<void> {
+    const index = documents.value.findIndex(d => d.id === id)
+    if (index !== -1) documents.value[index] = { ...documents.value[index]!, tags }
+    await supabase.from('documents').update({ tags }).eq('id', id)
+  }
+
+  async function pin(id: string): Promise<void> {
+    const pinned_at = new Date().toISOString()
+    const index = documents.value.findIndex(d => d.id === id)
+    if (index !== -1) documents.value[index] = { ...documents.value[index]!, pinned_at }
+    await supabase.from('documents').update({ pinned_at }).eq('id', id)
+  }
+
+  async function unpin(id: string): Promise<void> {
+    const index = documents.value.findIndex(d => d.id === id)
+    if (index !== -1) documents.value[index] = { ...documents.value[index]!, pinned_at: null }
+    await supabase.from('documents').update({ pinned_at: null }).eq('id', id)
+  }
+
   return {
     documents,
     getById,
@@ -126,6 +147,9 @@ export const useDocumentsStore = defineStore('documents', () => {
     fetchById,
     create,
     update,
+    updateTags,
+    pin,
+    unpin,
     remove,
   }
 })
